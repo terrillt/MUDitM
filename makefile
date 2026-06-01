@@ -39,16 +39,16 @@ CDEBUG = -g
 # #### Flags and linklibs definitions ####
 
 #CFLAGS = -Wunused -Wimplicit-function-declaration -Wno-unused-but-set-variable -Wno-format-overflow -Wno-format-truncation `pkg-config --cflags glib-2.0`
-CFLAGS = -Wall -Wno-unused-but-set-variable `pkg-config --cflags glib-2.0`
+CFLAGS = -Wall -Wno-unused-but-set-variable -I. `pkg-config --cflags glib-2.0 openssl libpcre2-8`
 LDFLAGS = 
-LINKLIBS = -lresolv -lssl -lcrypto `pkg-config --libs glib-2.0` -lpcre2-8 -lz
+LINKLIBS = -lresolv `pkg-config --libs glib-2.0 openssl libpcre2-8` -lz
 
 # #### ############################################# ###
 # ####         Makefile magic begins here.           ###
 # #### Very little needs to change beyond this line! ###
 # #### ############################################# ###
 
-CC=gcc
+CC ?= cc
 BUILD = ./build
 
 CFILES = $(MUDITM_CFILES)
@@ -69,7 +69,7 @@ RUN = .
 # #### Recipies Start Here ####
 
 $(info ---------- START OF MUD in the Middle COMPILATION -----------)
-all : $(BUILD) run tags
+all : $(BUILD) run
 
 # Copying the binaries...
 #.PHONY: $(MUDITM)
@@ -113,7 +113,7 @@ tags : $(HFILES) $(CFILES)
 .PHONY: clean
 clean : 
 	-rm $(BUILD)/$(MUDITM) $(MUDITM) $(OFILES) $(DFILES) tags
-	-rm -rI $(BUILD)
+	-rm -rf $(BUILD)
 
 .PHONY: wall-summary
 wall-summary: 
