@@ -40,6 +40,7 @@
 #include "mccp.h"
 
 #include "muditm.h"
+#include "certcheck.h"
 
 #define CONFIG_FILE "/etc/muditm.conf"
 
@@ -47,6 +48,9 @@ void configure_context(SSL_CTX * ctx,char *cert, char *key, char *chain);
 void log_endpoint_stats(Endpoint *ep);
 
 char *muditm_proxy_name;
+
+void default_notify(const char *msg) { muditm_log("%s", msg); }
+notify_fn muditm_notify = default_notify;
 
 int new_mommie(int port) {
 	
@@ -366,6 +370,13 @@ int main(int argc, char **argv)
 
 	SSL_load_error_strings();
 	OpenSSL_add_ssl_algorithms();
+
+	if( (!strcasecmp(client_security,"SSL")) ||
+		(!strcasecmp(game_security,"SSL"))
+	) {
+		check_cert_expiry(cert_file);
+	}
+
 	/* start listening for the client end */
 	mother_sock = new_mommie(listening_port);
 
@@ -384,6 +395,7 @@ int main(int argc, char **argv)
 	) {
 		ctx = SSL_CTX_new(TLS_method());
 		configure_context(ctx,cert_file,key_file,chain_file);
+		check_cert_expiry_throttled(cert_file);
 	}
 
 	if(!strcasecmp(client_security,"SSL")) {
