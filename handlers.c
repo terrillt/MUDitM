@@ -367,14 +367,14 @@ int respond_do(Iobuf *iob, size_t match_len, Endpoint *from, Endpoint *to, GKeyF
 	return(respond_X(iob,match_len,from,to,gkf,DO));
 }
 
-/* whatever the sender said he will, we say dont. */
+/* sender asked us to DO something, we refuse with WONT. */
 int respond_wont(Iobuf *iob, size_t match_len, Endpoint *from, Endpoint *to, GKeyFile *gkf) {
-	
+
 	char proto;
 
 	proto = *(head_iobuf(iob)+2);
 
 	muditm_debug("send IAC WONT %d to %s",proto,from->name);
 
-	return(respond_X(iob,match_len,from,to,gkf,DONT));
+	return(respond_X(iob,match_len,from,to,gkf,WONT));
 }
