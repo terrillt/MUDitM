@@ -23,7 +23,7 @@
 #include <arpa/inet.h>
 #include <arpa/telnet.h>
 #include <fcntl.h>
-#include <malloc.h>
+#include <stdlib.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <openssl/err.h>
