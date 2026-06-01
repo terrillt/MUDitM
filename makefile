@@ -23,7 +23,7 @@ INSTALLDIR=/usr/local
 
 # List the .c files here.  Order doesn't matter.  Dont worry about header file
 # dependencies, this makefile will figure them out automatically.
-MUDITM_CFILES = muditm.c debug.c proxy.c iobuf.c handlers.c mccp.c iostats.c certcheck.c
+MUDITM_CFILES = muditm.c debug.c proxy.c iobuf.c handlers.c mccp.c iostats.c certcheck.c skmud/skmud.c
 
 # The list of HFILES, (required for making the ctags database) is generated
 # automatically from the MUDITM_CFILES list.  However, it is possible that not
@@ -102,6 +102,7 @@ $(BUILD)/$(MUDITM) : $(MUDITM_OFILES)
 
 # Build the .o's from the .c files, building .d's as you go.
 $(BUILD)/%.o : %.c
+	@mkdir -p $(dir $@)
 	$(CC) $(CDEBUG) $(CFLAGS) -MMD -c $< -o $(@)
 
 # Updating the tags file...
