@@ -27,6 +27,7 @@
 #include <netinet/in.h>
 #include <openssl/err.h>
 #include <openssl/ssl.h>
+#include <signal.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/socket.h>
@@ -373,6 +374,8 @@ int main(int argc, char **argv)
 	if( (client->socket = demonize(mother_sock,demon)) == -1) {
 		goto cleanup_client;
 	}
+
+	signal(SIGPIPE, SIG_IGN);
 
 	/* load ssl data after the fork, so that each new client connect will read
 	 * the keys again, in case they have been updated. */
