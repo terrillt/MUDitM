@@ -318,7 +318,7 @@ int mnes_does(Iobuf *iob,size_t match_len,Endpoint *from, Endpoint *to,GKeyFile 
 };
 
 /* whatever the sender said he will, we say X on behalf of the other side. */
-int respond_X(Iobuf *iob, size_t match_len, Endpoint *from, Endpoint *to, GKeyFile *gkf, char X) {
+int respond_X(Iobuf *iob, size_t match_len, Endpoint *from, Endpoint *to, GKeyFile *gkf, int X) {
 	
 	Iobuf *out;
 	char proto;

@@ -39,7 +39,7 @@ CDEBUG = -g
 # #### Flags and linklibs definitions ####
 
 #CFLAGS = -Wunused -Wimplicit-function-declaration -Wno-unused-but-set-variable -Wno-format-overflow -Wno-format-truncation `pkg-config --cflags glib-2.0`
-CFLAGS = -Wall -Wno-unused-but-set-variable -I. `pkg-config --cflags glib-2.0 openssl libpcre2-8`
+CFLAGS = -Wall -Wno-unused-but-set-variable -Wformat-security -I. `pkg-config --cflags glib-2.0 openssl libpcre2-8`
 LDFLAGS = 
 LINKLIBS = -lresolv `pkg-config --libs glib-2.0 openssl libpcre2-8` -lz
 
