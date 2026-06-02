@@ -14,8 +14,14 @@ Within each category, items are grouped by version (newest first), sorted by dat
 
 ## Contents
 
+- [Configuration](#configuration)
 - [Build System](#build-system)
 - [Project Structure](#project-structure)
+
+## Configuration
+
+### 5.11.0
+- [x] `5.11.0` `2026-06` Committed config files for test and production — `muditm-test.conf` (Docker: 2026→2027, self-signed cert, skmud control socket) and `muditm-prod.conf` (production: 1996→1997, Let's Encrypt cert paths, skmud control socket). Port architecture: MUDitM=N (front door), MUD=N+1 (internal). Dev config remains gitignored. **Files:** `muditm-test.conf`, `muditm-prod.conf`
 
 ## Build System
 

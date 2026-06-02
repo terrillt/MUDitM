@@ -59,11 +59,16 @@ make clean && make
 
 See `muditm.conf` for the upstream example config with comments.
 
-Dev config (`muditm-dev.conf`, gitignored):
-- Listens on port 2027 (TLS + plaintext via auto-detect)
-- Forwards to SKMUD game server on localhost:2026
-- MNES IPADDRESS forwarding enabled
-- MCCP2 compression enabled both sides
+### Config files
+
+| File | Environment | Committed | Ports |
+|------|-------------|-----------|-------|
+| `muditm-dev.conf` | macOS dev | No (gitignored) | 2026 → 2027 |
+| `muditm-test.conf` | Docker test | Yes | 2026 → 2027, self-signed cert |
+| `muditm-prod.conf` | Production | Yes | 1996 → 1997, Let's Encrypt cert |
+
+All configs use `security = auto` (TLS auto-detect), MNES IPADDRESS forwarding,
+and `[skmud] control_socket` for admin notifications.
 
 Key config option for this fork:
 ```ini
