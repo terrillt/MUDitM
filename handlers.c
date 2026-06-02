@@ -253,11 +253,25 @@ int mnes_request(Iobuf *iob, size_t match_len, Endpoint *from, Endpoint *to, GKe
 		)
 	);
 
+	/* queue security status (TLS version or plaintext) */
+	push_iobuf(out,
+		snprintf_mnes_pair(tail_iobuf(out),avail_iobuf(out),
+			"SECURITY", to->ssl ? (char *)SSL_get_version(to->ssl) : "plaintext"
+		)
+	);
+
+	/* queue compression status */
+	push_iobuf(out,
+		snprintf_mnes_pair(tail_iobuf(out),avail_iobuf(out),
+			"COMPRESSION", to->mccp_mode == MCCP_ENABLE ? "MCCP2" : "none"
+		)
+	);
+
 	/* queue all of the host report vars */
+	addr_endpoint(to,addrtxt,sizeof(addrtxt));
 	if(ipreportlist) {
-		addr_endpoint(to,addrtxt,sizeof(addrtxt));
 		for(int i=0; i<ipreportcount; i++) {
-			push_iobuf(out, 
+			push_iobuf(out,
 				snprintf_mnes_pair(tail_iobuf(out),avail_iobuf(out),
 					ipreportlist[i],addrtxt
 				)
@@ -269,6 +283,13 @@ int mnes_request(Iobuf *iob, size_t match_len, Endpoint *from, Endpoint *to, GKe
 		}
 		g_strfreev (ipreportlist);
 	}
+
+	/* queue trusted IP (custom field — locked on receipt by game server) */
+	push_iobuf(out,
+		snprintf_mnes_pair(tail_iobuf(out),avail_iobuf(out),
+			"TRUSTED_IPADDRESS",addrtxt
+		)
+	);
 
 	/* and write it out. */
 	flush_endpoint(from);

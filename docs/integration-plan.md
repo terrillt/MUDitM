@@ -72,7 +72,7 @@ Also test with Mudlet configured for TLS on localhost:2027.
 1. MUDitM starts without errors
 2. `openssl s_client -connect localhost:2027` → TLS works locally, MUD greeting appears
 3. Can log in and execute commands through the proxy
-4. MNES IPADDRESS is received by the game server (check with `stat me` — client_ip field shows remote IP, not 127.0.0.1)
+4. MNES IPADDRESS is received by the game server (check with `terminals <name>` — Trusted IP shows remote IP, not 127.0.0.1)
 5. Ctrl+C MUDitM → client disconnects cleanly
 
 ### Files

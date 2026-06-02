@@ -413,6 +413,7 @@ int main(int argc, char **argv)
 		(!strcasecmp(game_security,"SSL"))
 	) {
 		ctx = SSL_CTX_new(TLS_method());
+		SSL_CTX_set_min_proto_version(ctx, TLS1_2_VERSION);
 		configure_context(ctx,cert_file,key_file,chain_file);
 		check_cert_expiry_throttled(cert_file);
 	}

@@ -88,8 +88,11 @@ security = none    # no TLS
 
 ## SKMUD Integration
 
-SKMUD's `comm.cpp` already handles:
-- MNES IPADDRESS (stores in `d->client_ip`, used for proxy checks)
+SKMUD's `comm.cpp` handles:
+- MNES IPADDRESS (stores in `d->claimed_ip`, untrusted display only)
+- MNES TRUSTED_IPADDRESS (stores in `d->trusted_ip`, locked from PROXY_ALLOWED sources, used for proxy checks)
+- MNES SECURITY, COMPRESSION, PROXY_NAME (proxy-guarded, display in `terminals` command)
+- Reverse DNS lookup on trusted_ip (background thread, shown in `terminals` detail)
 - 127.0.0.1 marked as `PROXY_ALLOWED` (migration 5.9.0-008)
 - TLS detection on raw port (sends handshake_failure alert) — bypassed when MUDitM is in front
 
