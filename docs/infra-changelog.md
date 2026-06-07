@@ -21,7 +21,8 @@ Within each category, items are grouped by version (newest first), sorted by dat
 ## Configuration
 
 ### 5.11.0
-- [x] `5.11.0` `2026-06` Committed config files for test and production — `muditm-test.conf` (Docker: 2026→2027, self-signed cert, skmud control socket) and `muditm-prod.conf` (production: 1996→1997, Let's Encrypt cert paths, skmud control socket). Port architecture: MUDitM=N (front door), MUD=N+1 (internal). Dev config remains gitignored. **Files:** `muditm-test.conf`, `muditm-prod.conf`
+- [x] `5.11.0` `2026-06-06` Test config cert path consolidation — cert/key paths changed from `src/externals/MUDitM/test-cert.pem` to `/home/mud/certs/fullchain.pem`. Docker image generates self-signed fallback at that path; VPS volume mount overlays with Let's Encrypt. Same config works both environments. **Files:** `muditm-test.conf`
+- [x] `5.11.0` `2026-06-02` Committed config files for test and production — `muditm-test.conf` (Docker: 2026→2027, self-signed cert, skmud control socket) and `muditm-prod.conf` (production: 1996→1997, Let's Encrypt cert paths, skmud control socket). Port architecture: MUDitM=N (front door), MUD=N+1 (internal). Dev config remains gitignored. **Files:** `muditm-test.conf`, `muditm-prod.conf`
 
 ## Build System
 
