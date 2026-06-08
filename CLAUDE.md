@@ -64,7 +64,8 @@ See `muditm.conf` for the upstream example config with comments.
 | File | Environment | Committed | Ports |
 |------|-------------|-----------|-------|
 | `muditm-dev.conf` | macOS dev | No (gitignored) | 2026 → 2027 |
-| `muditm-test.conf` | Docker test | Yes | 2026 → 2027, self-signed cert |
+| `muditm-test.conf` | Docker test (VPS) | Yes | 2026 → 2027, self-signed cert |
+| `muditm-ci.conf` | CI pipeline | Yes | 1996 → 1997, self-signed cert |
 | `muditm-prod.conf` | Production | Yes | 1996 → 1997, Let's Encrypt cert |
 
 All configs use `security = auto` (TLS auto-detect), MNES IPADDRESS forwarding,
