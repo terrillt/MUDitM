@@ -71,17 +71,30 @@ See `muditm.conf` for the upstream example config with comments.
 All configs use `security = auto` (TLS auto-detect), MNES IPADDRESS forwarding,
 and `[skmud] control_socket` for admin notifications.
 
-Key config option for this fork:
+Key config options:
 ```ini
+[muditm]
+max-children = 900   # max concurrent forked children (0 = unlimited)
+listen-backlog = 16  # kernel listen queue depth
+
 [client]
 security = auto    # peek first byte: TLS if 0x16, plaintext otherwise
 security = SSL     # require TLS (upstream default)
 security = none    # no TLS
 ```
 
+Connection limits per environment:
+
+| Environment | max-children | Rationale |
+|-------------|-------------|-----------|
+| Production | 900 | Below MUD's ~1020 fd ceiling, prevents fork storm |
+| Test | 100 | Covers 27-connection test harness with headroom |
+| CI | 100 | Same as test |
+| Dev | 0 (unlimited) | Local only, not exposed |
+
 ## Architecture
 
-- **Fork-per-connection**: Parent process accepts, forks child per client. Child handles one session.
+- **Fork-per-connection**: Parent process accepts, forks child per client. Child handles one session. `max-children` caps total forks; `listen-backlog` controls kernel accept queue depth.
 - **Pattern matching**: PCRE2 regex on the byte stream to intercept telnet negotiations (MNES, MCCP2).
 - **TLS**: OpenSSL. Cert loaded after fork so updates take effect on next connection.
 - **Compression**: MCCP2 on both client and game sides. Decompresses game→client, re-compresses client→game.
