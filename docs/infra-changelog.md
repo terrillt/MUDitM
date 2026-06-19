@@ -29,6 +29,7 @@ Within each category, items are grouped by version (newest first), sorted by dat
 ## Build System
 
 ### 5.11.0
+- [x] `5.11.0` `2026-06-19` Sanitizer and coverage build support — EXTRA_CFLAGS/EXTRA_LDFLAGS variables appended to Makefile flags, enabling ASan/TSan/gcov builds via command line. Docker, CI, and deploy.sh pass matching flags automatically. **Files:** `makefile`, `.gitignore`
 - [x] `5.11.0` `2026-05-31` Subdirectory compilation support — added mkdir -p in build rule for skmud/ subdirectory object files. **Files:** `makefile`
 - [x] `5.11.0` `2026-05-31` certcheck.c and skmud/skmud.c added to MUDITM_CFILES — certificate expiry module and SKMUD-specific extensions compiled into the binary. **Files:** `makefile`
 - [x] `5.11.0` `2026-05-31` macOS build support — replaced malloc.h with stdlib.h (glibc-specific, doesn't exist on macOS). Use pkg-config for OpenSSL and PCRE2 discovery (Homebrew non-standard prefixes). Default compiler to cc instead of hardcoded gcc. Removed ctags from default build target (still available via `make tags`). Changed rm -rI to rm -rf (GNU-only flag). **Files:** `makefile`, `handlers.c`, `iobuf.c`, `proxy.c`

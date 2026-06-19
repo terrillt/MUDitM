@@ -4,6 +4,8 @@ build/
 *.d
 tags
 muditm
+muditm-asan
+muditm-tsan
 muditm.prev
 tests/test_max_children
 muditm-dev.conf

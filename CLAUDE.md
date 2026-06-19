@@ -40,6 +40,20 @@ make clean && make
 make clean && make
 ```
 
+### Sanitizer / coverage builds
+```bash
+# AddressSanitizer
+make clean && make EXTRA_CFLAGS="-fsanitize=address -fno-omit-frame-pointer" EXTRA_LDFLAGS="-fsanitize=address"
+
+# ThreadSanitizer
+make clean && make EXTRA_CFLAGS="-fsanitize=thread -fno-omit-frame-pointer" EXTRA_LDFLAGS="-fsanitize=thread"
+
+# Coverage (gcov)
+make clean && make EXTRA_CFLAGS="--coverage" EXTRA_LDFLAGS="--coverage"
+```
+
+`EXTRA_CFLAGS` and `EXTRA_LDFLAGS` are appended to the Makefile's built-in flags. Docker, CI, and deploy.sh pass these automatically to match the SKMUD build variant.
+
 **Note**: Does NOT build on CentOS 7 (requires OpenSSL 1.1.0+, CentOS 7 ships 1.0.2).
 
 ## Run
