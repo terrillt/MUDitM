@@ -54,9 +54,9 @@ char *muditm_proxy_name;
 void default_notify(const char *msg) { muditm_log("%s", msg); }
 notify_fn muditm_notify = default_notify;
 
-int new_mommie(int port) {
-	
-	int s; 
+int new_mommie(int port, int backlog) {
+
+	int s;
 	int on = 1;
 	struct sockaddr_in6 addr;
 	struct linger ld;
@@ -71,7 +71,7 @@ int new_mommie(int port) {
 	ld.l_linger = 1;
 
 	s = socket(AF_INET6, SOCK_STREAM, 0);
-	
+
 	if(s<0) {
 		muditm_log("Socket error: %s",strerror(errno));
 		exit(EXIT_FAILURE);
@@ -81,6 +81,9 @@ int new_mommie(int port) {
 		muditm_log("Failed to set REUSEADDR: %s",strerror(errno));
 		exit(EXIT_FAILURE);
 	}
+
+	int v6only = 0;
+	setsockopt(s, IPPROTO_IPV6, IPV6_V6ONLY, &v6only, sizeof(v6only));
 
 	if (setsockopt (s, SOL_SOCKET, SO_LINGER,  &ld, sizeof(ld)) < 0) {
 		muditm_log("Failed to set LINGER: %s",strerror(errno));
@@ -92,7 +95,7 @@ int new_mommie(int port) {
 		exit(EXIT_FAILURE);
 	}
 
-	if(listen(s,1) < 0) {
+	if(listen(s,backlog) < 0) {
 		muditm_log("I said 'Now you listen to me...' and he said: %s",strerror(errno));
 		exit(EXIT_FAILURE);
 	}
@@ -213,9 +216,14 @@ int get_conf_boolean(GKeyFile * gkf, gchar * group, gchar * key, int def) {
 }
 
 /* Does what it says on the tin. */
+static volatile sig_atomic_t child_count = 0;
+static int max_children = 0;
+
 void zombie_killer(int s) {
 	int saved_errno = errno;
-	while(waitpid(-1,NULL,WNOHANG) > 0);
+	while(waitpid(-1,NULL,WNOHANG) > 0) {
+		child_count--;
+	}
 	errno = saved_errno;
 }
 
@@ -226,8 +234,16 @@ int demonize(int mother_sock, int forking) {
 	char addrstr[INET6_ADDRSTRLEN];
 	int client_sock;
 	struct sigaction sa;
+	int at_capacity = 0;
 
 	muditm_log("Accepting Client Connections.");
+	if(max_children > 0) {
+		muditm_log("Max children: %d",max_children);
+	}
+
+	sigset_t sigchld_mask, old_mask;
+	sigemptyset(&sigchld_mask);
+	sigaddset(&sigchld_mask, SIGCHLD);
 
 	if(forking) {
 		sa.sa_handler = zombie_killer;
@@ -241,18 +257,51 @@ int demonize(int mother_sock, int forking) {
 
 	while(1) {
 
+		if(forking && max_children > 0 && child_count >= max_children) {
+			if(!at_capacity) {
+				muditm_log("At max children (%d), deferring new connections.",max_children);
+				at_capacity = 1;
+			}
+			struct pollfd pfd = { .fd = mother_sock, .events = POLLIN };
+			poll(&pfd, 1, 100);
+			continue;
+		}
+
+		if(at_capacity) {
+			muditm_log("Below max children (%d), resuming.",max_children);
+			at_capacity = 0;
+		}
+
 		addrlen = sizeof(addr);
 
 		client_sock = accept(mother_sock,(struct sockaddr*)&addr,&addrlen);
 		if(client_sock <0) {
+			if(errno == EINTR) continue;
 			muditm_log("I can't accept that from the likes of you! %s",strerror(errno));
 			return(-1);
 		}
 
-		if(forking && fork()) {
-			close(client_sock);
-			client_sock = -1;
-			continue;
+		if(forking) {
+			sigprocmask(SIG_BLOCK, &sigchld_mask, &old_mask);
+
+			pid_t pid = fork();
+			if(pid > 0) {
+				child_count++;
+				sigprocmask(SIG_SETMASK, &old_mask, NULL);
+				close(client_sock);
+				client_sock = -1;
+				continue;
+			} else if(pid == 0) {
+				sigprocmask(SIG_SETMASK, &old_mask, NULL);
+				close(mother_sock);
+				mother_sock = -1;
+				break;
+			} else {
+				sigprocmask(SIG_SETMASK, &old_mask, NULL);
+				muditm_log("Fork failed: %s", strerror(errno));
+				close(client_sock);
+				continue;
+			}
 		} else {
 			close(mother_sock);
 			mother_sock = -1;
@@ -292,6 +341,7 @@ int main(int argc, char **argv)
 
 	/* configuration setable variables */
 	int listening_port = 4143;  /* PARAM */
+	int listen_backlog = 16;
 	char *client_security;
 	char *client_compression;
 	char *game_host;
@@ -350,6 +400,8 @@ int main(int argc, char **argv)
 	}
 
 	listening_port = get_conf_int(gkf,"muditm","listen",4143);
+	listen_backlog = get_conf_int(gkf,"muditm","listen-backlog",16);
+	max_children = get_conf_int(gkf,"muditm","max-children",0);
 	demon = get_conf_boolean(gkf,"muditm","demon",1);
 	client_security = get_conf_string(gkf,"client","security","none");
 	game_security = get_conf_string(gkf,"game","security","none");
@@ -383,7 +435,7 @@ int main(int argc, char **argv)
 	}
 
 	/* start listening for the client end */
-	mother_sock = new_mommie(listening_port);
+	mother_sock = new_mommie(listening_port, listen_backlog);
 
 	client = new_endpoint("Client");
 

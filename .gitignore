@@ -5,6 +5,7 @@ build/
 tags
 muditm
 muditm.prev
+tests/test_max_children
 muditm-dev.conf
 .cert-expiry-warned
 .DS_Store
