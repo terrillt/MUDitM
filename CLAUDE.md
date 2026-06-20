@@ -54,6 +54,14 @@ make clean && make EXTRA_CFLAGS="--coverage" EXTRA_LDFLAGS="--coverage"
 
 `EXTRA_CFLAGS` and `EXTRA_LDFLAGS` are appended to the Makefile's built-in flags. Docker, CI, and deploy.sh pass these automatically to match the SKMUD build variant.
 
+### Tests
+```bash
+make tests                # Build test binaries (not part of 'make all')
+./tests/test_max_children # Run max-children connection limit test
+```
+
+Test binaries are built separately from the main binary because Xcode's build environment conflicts with bare `cc`. `deploy.sh` and CI call `make tests` explicitly. The pytest server chain auto-builds via `make tests` if the binary is missing.
+
 **Note**: Does NOT build on CentOS 7 (requires OpenSSL 1.1.0+, CentOS 7 ships 1.0.2).
 
 ## Run

@@ -29,6 +29,7 @@ Within each category, items are grouped by version (newest first), sorted by dat
 ## Build System
 
 ### 5.11.0
+- [x] `5.11.0` `2026-06-20` `make tests` target — builds test binaries separately from main binary. Not part of `all` (Xcode env conflicts). Called by deploy.sh and auto-built by pytest on demand. `make clean` removes test binaries. `.dSYM` added to .gitignore. **Files:** `makefile`, `.gitignore`
 - [x] `5.11.0` `2026-06-19` Sanitizer and coverage build support — EXTRA_CFLAGS/EXTRA_LDFLAGS variables appended to Makefile flags, enabling ASan/TSan/gcov builds via command line. Docker, CI, and deploy.sh pass matching flags automatically. **Files:** `makefile`, `.gitignore`
 - [x] `5.11.0` `2026-05-31` Subdirectory compilation support — added mkdir -p in build rule for skmud/ subdirectory object files. **Files:** `makefile`
 - [x] `5.11.0` `2026-05-31` certcheck.c and skmud/skmud.c added to MUDITM_CFILES — certificate expiry module and SKMUD-specific extensions compiled into the binary. **Files:** `makefile`
