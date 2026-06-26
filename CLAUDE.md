@@ -98,6 +98,7 @@ Key config options:
 [muditm]
 max-children = 900   # max concurrent forked children (0 = unlimited)
 listen-backlog = 16  # kernel listen queue depth
+log-file = /path     # connection log (empty = stderr only). Prod uses this for fail2ban
 
 [client]
 security = auto    # peek first byte: TLS if 0x16, plaintext otherwise
