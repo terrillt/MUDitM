@@ -39,8 +39,10 @@ CDEBUG = -g
 # #### Flags and linklibs definitions ####
 
 #CFLAGS = -Wunused -Wimplicit-function-declaration -Wno-unused-but-set-variable -Wno-format-overflow -Wno-format-truncation `pkg-config --cflags glib-2.0`
-CFLAGS = -Wall -Wno-unused-but-set-variable -Wformat-security -I. `pkg-config --cflags glib-2.0 openssl libpcre2-8`
-LDFLAGS = 
+EXTRA_CFLAGS ?=
+EXTRA_LDFLAGS ?=
+CFLAGS = -Wall -Wno-unused-but-set-variable -Wformat-security -I. `pkg-config --cflags glib-2.0 openssl libpcre2-8` $(EXTRA_CFLAGS)
+LDFLAGS = $(EXTRA_LDFLAGS)
 LINKLIBS = -lresolv `pkg-config --libs glib-2.0 openssl libpcre2-8` -lz
 
 # #### ############################################# ###
@@ -105,6 +107,14 @@ $(BUILD)/%.o : %.c
 	@mkdir -p $(dir $@)
 	$(CC) $(CDEBUG) $(CFLAGS) -MMD -c $< -o $(@)
 
+# Build test binaries (not part of 'all' — Xcode env conflicts with bare cc)
+# Called explicitly by deploy.sh and run-ci.sh, or auto-built by pytest on demand
+.PHONY: tests
+tests :
+	@if [ -f tests/test_max_children.c ]; then \
+		cc -g -o tests/test_max_children tests/test_max_children.c; \
+	fi
+
 # Updating the tags file...
 tags : $(HFILES) $(CFILES)
 	ctags $(HFILES) $(CFILES)
@@ -112,8 +122,8 @@ tags : $(HFILES) $(CFILES)
 # Cleaning up...
 # .PHONY just means 'not really a filename to check for'
 .PHONY: clean
-clean : 
-	-rm $(BUILD)/$(MUDITM) $(MUDITM) $(OFILES) $(DFILES) tags
+clean :
+	-rm $(BUILD)/$(MUDITM) $(MUDITM) $(OFILES) $(DFILES) tags tests/test_max_children
 	-rm -rf $(BUILD)
 
 .PHONY: wall-summary

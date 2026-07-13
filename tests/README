@@ -1,0 +1,13 @@
+MUDitM Tests
+============
+
+test_max_children.c
+  Verifies max-children connection limiting. Starts a TCP echo server,
+  launches MUDitM with max-children=3, and checks that connections are
+  capped, queued, and released correctly.
+
+  Build:  cc -o test_max_children tests/test_max_children.c
+  Run:    ./test_max_children [path-to-muditm]
+
+  Defaults to ./muditm if no path is given. Requires no external
+  dependencies beyond a C compiler and the muditm binary.

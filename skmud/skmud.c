@@ -26,7 +26,7 @@ static void skmud_notify(const char *msg) {
 
 	memset(&addr, 0, sizeof(addr));
 	addr.sun_family = AF_UNIX;
-	snprintf(addr.sun_path, sizeof(addr.sun_path), "%s", skmud_control_socket);
+	strncpy(addr.sun_path, skmud_control_socket, sizeof(addr.sun_path) - 1);
 
 	if (connect(fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
 		muditm_log("SKMUD control socket not available: %s", skmud_control_socket);

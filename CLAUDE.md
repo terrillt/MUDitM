@@ -40,6 +40,28 @@ make clean && make
 make clean && make
 ```
 
+### Sanitizer / coverage builds
+```bash
+# AddressSanitizer
+make clean && make EXTRA_CFLAGS="-fsanitize=address -fno-omit-frame-pointer" EXTRA_LDFLAGS="-fsanitize=address"
+
+# ThreadSanitizer
+make clean && make EXTRA_CFLAGS="-fsanitize=thread -fno-omit-frame-pointer" EXTRA_LDFLAGS="-fsanitize=thread"
+
+# Coverage (gcov)
+make clean && make EXTRA_CFLAGS="--coverage" EXTRA_LDFLAGS="--coverage"
+```
+
+`EXTRA_CFLAGS` and `EXTRA_LDFLAGS` are appended to the Makefile's built-in flags. Docker, CI, and deploy.sh pass these automatically to match the SKMUD build variant.
+
+### Tests
+```bash
+make tests                # Build test binaries (not part of 'make all')
+./tests/test_max_children # Run max-children connection limit test
+```
+
+Test binaries are built separately from the main binary because Xcode's build environment conflicts with bare `cc`. `deploy.sh` and CI call `make tests` explicitly. The pytest server chain auto-builds via `make tests` if the binary is missing.
+
 **Note**: Does NOT build on CentOS 7 (requires OpenSSL 1.1.0+, CentOS 7 ships 1.0.2).
 
 ## Run
@@ -64,23 +86,38 @@ See `muditm.conf` for the upstream example config with comments.
 | File | Environment | Committed | Ports |
 |------|-------------|-----------|-------|
 | `muditm-dev.conf` | macOS dev | No (gitignored) | 2026 → 2027 |
-| `muditm-test.conf` | Docker test | Yes | 2026 → 2027, self-signed cert |
+| `muditm-test.conf` | Docker test (VPS) | Yes | 2026 → 2027, self-signed cert |
+| `muditm-ci.conf` | CI pipeline | Yes | 1996 → 1997, self-signed cert |
 | `muditm-prod.conf` | Production | Yes | 1996 → 1997, Let's Encrypt cert |
 
 All configs use `security = auto` (TLS auto-detect), MNES IPADDRESS forwarding,
 and `[skmud] control_socket` for admin notifications.
 
-Key config option for this fork:
+Key config options:
 ```ini
+[muditm]
+max-children = 900   # max concurrent forked children (0 = unlimited)
+listen-backlog = 16  # kernel listen queue depth
+log-file = /path     # connection log (empty = stderr only). Prod uses this for fail2ban
+
 [client]
 security = auto    # peek first byte: TLS if 0x16, plaintext otherwise
 security = SSL     # require TLS (upstream default)
 security = none    # no TLS
 ```
 
+Connection limits per environment:
+
+| Environment | max-children | Rationale |
+|-------------|-------------|-----------|
+| Production | 900 | Below MUD's ~1020 fd ceiling, prevents fork storm |
+| Test | 100 | Covers 27-connection test harness with headroom |
+| CI | 100 | Same as test |
+| Dev | 0 (unlimited) | Local only, not exposed |
+
 ## Architecture
 
-- **Fork-per-connection**: Parent process accepts, forks child per client. Child handles one session.
+- **Fork-per-connection**: Parent process accepts, forks child per client. Child handles one session. `max-children` caps total forks; `listen-backlog` controls kernel accept queue depth.
 - **Pattern matching**: PCRE2 regex on the byte stream to intercept telnet negotiations (MNES, MCCP2).
 - **TLS**: OpenSSL. Cert loaded after fork so updates take effect on next connection.
 - **Compression**: MCCP2 on both client and game sides. Decompresses game→client, re-compresses client→game.

@@ -4,7 +4,11 @@ build/
 *.d
 tags
 muditm
+muditm-asan
+muditm-tsan
 muditm.prev
+tests/test_max_children
+*.dSYM
 muditm-dev.conf
 .cert-expiry-warned
 .DS_Store
