@@ -35,6 +35,10 @@
 /* exported global variable declarations */
 extern char *muditm_proxy_name;
 
+/* notification callback — override to route alerts to external systems */
+typedef void (*notify_fn)(const char *message);
+extern notify_fn muditm_notify;
+
 /* exported function declarations */
 
 

@@ -23,7 +23,7 @@ INSTALLDIR=/usr/local
 
 # List the .c files here.  Order doesn't matter.  Dont worry about header file
 # dependencies, this makefile will figure them out automatically.
-MUDITM_CFILES = muditm.c debug.c proxy.c iobuf.c handlers.c mccp.c iostats.c
+MUDITM_CFILES = muditm.c debug.c proxy.c iobuf.c handlers.c mccp.c iostats.c certcheck.c skmud/skmud.c
 
 # The list of HFILES, (required for making the ctags database) is generated
 # automatically from the MUDITM_CFILES list.  However, it is possible that not
@@ -39,16 +39,16 @@ CDEBUG = -g
 # #### Flags and linklibs definitions ####
 
 #CFLAGS = -Wunused -Wimplicit-function-declaration -Wno-unused-but-set-variable -Wno-format-overflow -Wno-format-truncation `pkg-config --cflags glib-2.0`
-CFLAGS = -Wall -Wno-unused-but-set-variable `pkg-config --cflags glib-2.0`
+CFLAGS = -Wall -Wno-unused-but-set-variable -Wformat-security -I. `pkg-config --cflags glib-2.0 openssl libpcre2-8`
 LDFLAGS = 
-LINKLIBS = -lresolv -lssl -lcrypto `pkg-config --libs glib-2.0` -lpcre2-8 -lz
+LINKLIBS = -lresolv `pkg-config --libs glib-2.0 openssl libpcre2-8` -lz
 
 # #### ############################################# ###
 # ####         Makefile magic begins here.           ###
 # #### Very little needs to change beyond this line! ###
 # #### ############################################# ###
 
-CC=gcc
+CC ?= cc
 BUILD = ./build
 
 CFILES = $(MUDITM_CFILES)
@@ -69,7 +69,7 @@ RUN = .
 # #### Recipies Start Here ####
 
 $(info ---------- START OF MUD in the Middle COMPILATION -----------)
-all : $(BUILD) run tags
+all : $(BUILD) run
 
 # Copying the binaries...
 #.PHONY: $(MUDITM)
@@ -102,6 +102,7 @@ $(BUILD)/$(MUDITM) : $(MUDITM_OFILES)
 
 # Build the .o's from the .c files, building .d's as you go.
 $(BUILD)/%.o : %.c
+	@mkdir -p $(dir $@)
 	$(CC) $(CDEBUG) $(CFLAGS) -MMD -c $< -o $(@)
 
 # Updating the tags file...
@@ -113,7 +114,7 @@ tags : $(HFILES) $(CFILES)
 .PHONY: clean
 clean : 
 	-rm $(BUILD)/$(MUDITM) $(MUDITM) $(OFILES) $(DFILES) tags
-	-rm -rI $(BUILD)
+	-rm -rf $(BUILD)
 
 .PHONY: wall-summary
 wall-summary: 

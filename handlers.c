@@ -23,7 +23,7 @@
 #include <arpa/inet.h>
 #include <arpa/telnet.h>
 #include <fcntl.h>
-#include <malloc.h>
+#include <stdlib.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <openssl/err.h>
@@ -253,11 +253,25 @@ int mnes_request(Iobuf *iob, size_t match_len, Endpoint *from, Endpoint *to, GKe
 		)
 	);
 
+	/* queue security status (TLS version or plaintext) */
+	push_iobuf(out,
+		snprintf_mnes_pair(tail_iobuf(out),avail_iobuf(out),
+			"SECURITY", to->ssl ? (char *)SSL_get_version(to->ssl) : "plaintext"
+		)
+	);
+
+	/* queue compression status */
+	push_iobuf(out,
+		snprintf_mnes_pair(tail_iobuf(out),avail_iobuf(out),
+			"COMPRESSION", to->mccp_mode == MCCP_ENABLE ? "MCCP2" : "none"
+		)
+	);
+
 	/* queue all of the host report vars */
+	addr_endpoint(to,addrtxt,sizeof(addrtxt));
 	if(ipreportlist) {
-		addr_endpoint(to,addrtxt,sizeof(addrtxt));
 		for(int i=0; i<ipreportcount; i++) {
-			push_iobuf(out, 
+			push_iobuf(out,
 				snprintf_mnes_pair(tail_iobuf(out),avail_iobuf(out),
 					ipreportlist[i],addrtxt
 				)
@@ -269,6 +283,13 @@ int mnes_request(Iobuf *iob, size_t match_len, Endpoint *from, Endpoint *to, GKe
 		}
 		g_strfreev (ipreportlist);
 	}
+
+	/* queue trusted IP (custom field — locked on receipt by game server) */
+	push_iobuf(out,
+		snprintf_mnes_pair(tail_iobuf(out),avail_iobuf(out),
+			"TRUSTED_IPADDRESS",addrtxt
+		)
+	);
 
 	/* and write it out. */
 	flush_endpoint(from);
@@ -318,7 +339,7 @@ int mnes_does(Iobuf *iob,size_t match_len,Endpoint *from, Endpoint *to,GKeyFile 
 };
 
 /* whatever the sender said he will, we say X on behalf of the other side. */
-int respond_X(Iobuf *iob, size_t match_len, Endpoint *from, Endpoint *to, GKeyFile *gkf, char X) {
+int respond_X(Iobuf *iob, size_t match_len, Endpoint *from, Endpoint *to, GKeyFile *gkf, int X) {
 	
 	Iobuf *out;
 	char proto;
@@ -367,14 +388,14 @@ int respond_do(Iobuf *iob, size_t match_len, Endpoint *from, Endpoint *to, GKeyF
 	return(respond_X(iob,match_len,from,to,gkf,DO));
 }
 
-/* whatever the sender said he will, we say dont. */
+/* sender asked us to DO something, we refuse with WONT. */
 int respond_wont(Iobuf *iob, size_t match_len, Endpoint *from, Endpoint *to, GKeyFile *gkf) {
-	
+
 	char proto;
 
 	proto = *(head_iobuf(iob)+2);
 
 	muditm_debug("send IAC WONT %d to %s",proto,from->name);
 
-	return(respond_X(iob,match_len,from,to,gkf,DONT));
+	return(respond_X(iob,match_len,from,to,gkf,WONT));
 }

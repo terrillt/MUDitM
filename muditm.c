@@ -25,8 +25,10 @@
 #include <glib.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <poll.h>
 #include <openssl/err.h>
 #include <openssl/ssl.h>
+#include <signal.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/socket.h>
@@ -39,6 +41,8 @@
 #include "mccp.h"
 
 #include "muditm.h"
+#include "certcheck.h"
+#include "skmud/skmud.h"
 
 #define CONFIG_FILE "/etc/muditm.conf"
 
@@ -46,6 +50,9 @@ void configure_context(SSL_CTX * ctx,char *cert, char *key, char *chain);
 void log_endpoint_stats(Endpoint *ep);
 
 char *muditm_proxy_name;
+
+void default_notify(const char *msg) { muditm_log("%s", msg); }
+notify_fn muditm_notify = default_notify;
 
 int new_mommie(int port) {
 	
@@ -365,6 +372,16 @@ int main(int argc, char **argv)
 
 	SSL_load_error_strings();
 	OpenSSL_add_ssl_algorithms();
+
+	skmud_init(gkf);
+
+	if( (!strcasecmp(client_security,"SSL")) ||
+		(!strcasecmp(client_security,"auto")) ||
+		(!strcasecmp(game_security,"SSL"))
+	) {
+		check_cert_expiry(cert_file);
+	}
+
 	/* start listening for the client end */
 	mother_sock = new_mommie(listening_port);
 
@@ -374,19 +391,37 @@ int main(int argc, char **argv)
 		goto cleanup_client;
 	}
 
+	signal(SIGPIPE, SIG_IGN);
+
+	/* auto-detect TLS: peek first byte to determine if client is TLS */
+	int client_wants_tls = 0;
+	if(!strcasecmp(client_security,"auto")) {
+		struct pollfd pfd = { .fd = client->socket, .events = POLLIN };
+		if (poll(&pfd, 1, 250) > 0) {
+			unsigned char peek_byte;
+			if (recv(client->socket, &peek_byte, 1, MSG_PEEK) == 1) {
+				client_wants_tls = (peek_byte == 0x16);
+			}
+		}
+	} else if(!strcasecmp(client_security,"SSL")) {
+		client_wants_tls = 1;
+	}
+
 	/* load ssl data after the fork, so that each new client connect will read
 	 * the keys again, in case they have been updated. */
-	if( (!strcasecmp(client_security,"SSL")) ||
+	if( client_wants_tls ||
 		(!strcasecmp(game_security,"SSL"))
 	) {
 		ctx = SSL_CTX_new(TLS_method());
+		SSL_CTX_set_min_proto_version(ctx, TLS1_2_VERSION);
 		configure_context(ctx,cert_file,key_file,chain_file);
+		check_cert_expiry_throttled(cert_file);
 	}
 
-	if(!strcasecmp(client_security,"SSL")) {
+	if(client_wants_tls) {
 		if( ssl_start_endpoint(client, ctx,0) <= 0) {
 			goto cleanup_client;
-		} 
+		}
 	}
 
 	configure_compression(client,client_compression);
