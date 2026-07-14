@@ -62,6 +62,7 @@ Endpoint *new_endpoint(char *name) {
 	ep->re = NULL;
 	ep->match_data = NULL;
 	ep->mccp_mode = MCCP_DISABLE;
+	ep->mccp_nego = MCCP_NEGO_NONE;
 
 	/* alloc the iobuf for each available direction */
 	for(e=0;e<EP_MAX;e++) {

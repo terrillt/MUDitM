@@ -38,6 +38,13 @@ typedef enum {
 	MCCP_MAX
 } mccp_mode_t;
 
+typedef enum {
+	MCCP_NEGO_NONE,
+	MCCP_NEGO_OFFERED,
+	MCCP_NEGO_ACCEPTED,
+	MCCP_NEGO_REFUSED
+} mccp_nego_t;
+
 /* exported global variable declarations */
 
 /* exported function declarations */

@@ -260,10 +260,10 @@ int mnes_request(Iobuf *iob, size_t match_len, Endpoint *from, Endpoint *to, GKe
 		)
 	);
 
-	/* queue compression status */
+	/* queue compression status based on negotiation outcome */
 	push_iobuf(out,
 		snprintf_mnes_pair(tail_iobuf(out),avail_iobuf(out),
-			"COMPRESSION", to->mccp_mode == MCCP_ENABLE ? "MCCP2" : "none"
+			"COMPRESSION", to->mccp_nego == MCCP_NEGO_ACCEPTED ? "MCCP2" : "none"
 		)
 	);
 
