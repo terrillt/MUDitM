@@ -20,6 +20,9 @@ Within each category, items are grouped by version (newest first), sorted by dat
 
 ## Protocol
 
+### 5.11.1
+- [x] `5.11.1` `2026-07-14` **BUG** MNES COMPRESSION reported config intent, not actual state — `mnes_request` checked `mccp_mode == MCCP_ENABLE` (the config setting) instead of whether MCCP2 was actually negotiated. All connections reported "MCCP2" even when the client ignored or refused the offer (e.g. raw telnet, terminal emulators). Fix: `mccp_nego` state machine (NONE → OFFERED → ACCEPTED/REFUSED) tracks the actual negotiation. `mnes_request` reports "MCCP2" if accepted, "none" otherwise (including while still negotiating). `mccp2_do` and `mccp2_dont` send proactive MNES updates to correct the initial report if negotiation completes after MNES fires. **Files:** `mccp.h`, `proxy.h`, `mccp.c`, `handlers.c`
+
 ### 5.11.0
 - [x] `5.11.0` `2026-06-02` MNES variable injection — sends SECURITY (TLS version or "plaintext"), COMPRESSION (MCCP2 or none), and TRUSTED_IPADDRESS (kernel-verified client IP via `getpeername`) alongside existing PROXY_NAME and IPADDRESS. Game server uses TRUSTED_IPADDRESS for locked security decisions, standard IPADDRESS for display. **Files:** `handlers.c`
 - [x] `5.11.0` `2026-05-31` **BUG** Fix respond_wont sending DONT instead of WONT — respond_wont() sent IAC DONT instead of IAC WONT in response to IAC DO, violating RFC 854. Debug log already printed "WONT", masking the bug on the wire. Verified with raw byte capture before and after fix. **Files:** `handlers.c`
