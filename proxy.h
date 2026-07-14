@@ -58,6 +58,7 @@ struct endpoint_data {
 	int mnes_state;
 
 	int mccp_mode;
+	int mccp_nego;
 	z_stream *mccp[EP_MAX];
 	Iobuf *ziobuf[EP_MAX];
 	struct iostat_data sockstats;

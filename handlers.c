@@ -253,6 +253,12 @@ int mnes_request(Iobuf *iob, size_t match_len, Endpoint *from, Endpoint *to, GKe
 		)
 	);
 
+	/* queue compression status based on negotiation outcome */
+	push_iobuf(out,
+		snprintf_mnes_pair(tail_iobuf(out),avail_iobuf(out),
+			"COMPRESSION", to->mccp_nego == MCCP_NEGO_ACCEPTED ? "MCCP2" : "none"
+		)
+	);
 	/* queue all of the host report vars */
 	if(ipreportlist) {
 		addr_endpoint(to,addrtxt,sizeof(addrtxt));

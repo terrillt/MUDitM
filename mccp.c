@@ -189,6 +189,7 @@ void offer_compression(Endpoint *ep) {
 		memcpy(tail_iobuf(out),mccp2_offer,sizeof(mccp2_offer));
 		push_iobuf(out,sizeof(mccp2_offer));
 		flush_endpoint(ep);
+		ep->mccp_nego = MCCP_NEGO_OFFERED;
 	}
 
 }
@@ -235,6 +236,16 @@ int mccp2_do(Iobuf *iob,size_t match_len,Endpoint *from, Endpoint *to,GKeyFile *
 
 	/* and now really turn it on.*/
 	from->mccp[EP_OUTPUT] = z;
+	from->mccp_nego = MCCP_NEGO_ACCEPTED;
+
+	/* update MNES COMPRESSION (corrects "none" if MNES fired before this) */
+	out = (to->iobuf[EP_OUTPUT]);
+	push_iobuf(out,
+		snprintf_mnes_pair(tail_iobuf(out),avail_iobuf(out),
+			"COMPRESSION", "MCCP2"
+		)
+	);
+	flush_endpoint(to);
 
 	return(1);
 };
@@ -255,6 +266,18 @@ int mccp2_dont(Iobuf *iob,size_t match_len,Endpoint *from, Endpoint *to,GKeyFile
 	if(from->mccp[EP_OUTPUT]) {
 		free_zstream(from->mccp[EP_OUTPUT]);
 		from->mccp[EP_OUTPUT] = NULL;
+	}
+	from->mccp_nego = MCCP_NEGO_REFUSED;
+
+	/* update MNES COMPRESSION (corrects if MNES fired before refusal) */
+	{
+		Iobuf *out = (to->iobuf[EP_OUTPUT]);
+		push_iobuf(out,
+			snprintf_mnes_pair(tail_iobuf(out),avail_iobuf(out),
+				"COMPRESSION", "none"
+			)
+		);
+		flush_endpoint(to);
 	}
 
 	return(1);
