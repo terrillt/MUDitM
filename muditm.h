@@ -40,6 +40,8 @@ typedef void (*notify_fn)(const char *message);
 extern notify_fn muditm_notify;
 
 /* exported function declarations */
-
+#include <glib.h>
+int get_conf_boolean(GKeyFile *gkf, gchar *group, gchar *key, int def);
+int get_conf_int(GKeyFile *gkf, gchar *group, gchar *key, int def);
 
 #endif /* MUDITM_MUDITM_H */

@@ -344,7 +344,7 @@ int muditm_proxy(Endpoint *client, Endpoint *game, GKeyFile *gkf) {
 
 	/* if mccp is enabled, send WILL MCCP2 to the client side. */
 	offer_compression(client);
-	
+
 	pollster[0].fd = client->socket;
 	pollster[0].events = POLLIN;
 	flow[0].in = client;
@@ -368,7 +368,37 @@ int muditm_proxy(Endpoint *client, Endpoint *game, GKeyFile *gkf) {
 	}
 
 
+	int mnes_fallback = get_conf_boolean(gkf, "muditm", "newenv_fallback", 0);
+	int mnes_fallback_ms = mnes_fallback ? get_conf_int(gkf, "muditm", "newenv_fallback_ms", 2000) : 0;
+	struct timespec mnes_deadline = {0, 0};
+
 	while(1) {
+
+		/* If configured, and game asked for NEW_ENVIRON (DO) and client
+		 * hasn't responded (WILL or WONT) within the timeout, respond
+		 * on behalf of the client so the game sends SEND and we can
+		 * inject our proxy-side fields (IP, TLS, compression). */
+		if (mnes_fallback && game->mnes_state == DO && client->mnes_state == 0) {
+			struct timespec now;
+			clock_gettime(CLOCK_MONOTONIC, &now);
+			if (mnes_deadline.tv_sec == 0) {
+				mnes_deadline.tv_sec = now.tv_sec + mnes_fallback_ms / 1000;
+				mnes_deadline.tv_nsec = now.tv_nsec + (mnes_fallback_ms % 1000) * 1000000L;
+				if (mnes_deadline.tv_nsec >= 1000000000L) {
+					mnes_deadline.tv_sec++;
+					mnes_deadline.tv_nsec -= 1000000000L;
+				}
+			} else if (now.tv_sec > mnes_deadline.tv_sec
+			       || (now.tv_sec == mnes_deadline.tv_sec && now.tv_nsec >= mnes_deadline.tv_nsec)) {
+				muditm_log("Client silent on MNES after %dms -- responding WILL on its behalf.", mnes_fallback_ms);
+				client->mnes_state = WONT;
+				Iobuf *out = game->iobuf[EP_OUTPUT];
+				char mnes_will[] = { IAC, WILL, TELOPT_NEW_ENVIRON };
+				memcpy(tail_iobuf(out), mnes_will, sizeof(mnes_will));
+				push_iobuf(out, sizeof(mnes_will));
+				flush_endpoint(game);
+			}
+		}
 
 		/* poll for input */
 		ready = poll(pollster,pollster_count,polltimeout);

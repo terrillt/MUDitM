@@ -169,13 +169,22 @@ void add_client_patterns(Endpoint *ep) {
 	struct pattern_data *p;
 	
 	char mnes_wont[] = { IAC, WONT, TELOPT_NEW_ENVIRON };
+	char mnes_will[] = { IAC, WILL, TELOPT_NEW_ENVIRON };
 
-	/* add the mnes sendall pattern */
+	/* client says WONT — MUDitM lies and says WILL on its behalf */
 	p = new_pattern();
 	p->pat = (char *)malloc(sizeof(mnes_wont));
 	memcpy(p->pat,mnes_wont,sizeof(mnes_wont));
 	p->len = sizeof(mnes_wont);
 	p->action = mnes_client_wont;
+	ep->patterns = g_list_append(ep->patterns,p);
+
+	/* client says WILL — update state (clears faked WONT from timeout) */
+	p = new_pattern();
+	p->pat = (char *)malloc(sizeof(mnes_will));
+	memcpy(p->pat,mnes_will,sizeof(mnes_will));
+	p->len = sizeof(mnes_will);
+	p->action = mnes_client_will;
 	ep->patterns = g_list_append(ep->patterns,p);
 
 	/* add any requested mccp patterns. */
@@ -303,6 +312,17 @@ int mnes_request(Iobuf *iob, size_t match_len, Endpoint *from, Endpoint *to, GKe
 	/* ...or let the caller forward it on. */
 	return(0);
 
+}
+
+/* the client will do new-env — update state (clears faked WONT if we timed out). */
+int mnes_client_will(Iobuf *iob, size_t match_len, Endpoint *from, Endpoint *to, GKeyFile *gkf) {
+
+	muditm_log("%s will mnes%s.",from->name,
+		from->mnes_state == WONT ? " (overriding timeout)" : "");
+	from->mnes_state = WILL;
+
+	/* pass it through to the game server */
+	return(0);
 }
 
 /* the client won't do new-env, but we will.  Take note of that, and lie about it. */
