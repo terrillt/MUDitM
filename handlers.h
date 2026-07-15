@@ -56,6 +56,7 @@ void disable_matching(Endpoint *ep);
 PatternAction redact_match;
 PatternAction remove_match;
 PatternAction mnes_request;
+PatternAction mnes_client_will;
 PatternAction mnes_client_wont;
 PatternAction mnes_does;
 PatternAction respond_dont;
