@@ -91,7 +91,8 @@ See `muditm.conf` for the upstream example config with comments.
 | `muditm-prod.conf` | Production | Yes | 1996 → 1997, Let's Encrypt cert |
 
 All configs use `security = auto` (TLS auto-detect), MNES IPADDRESS forwarding,
-and `[skmud] control_socket` for admin notifications.
+and `[skmud] control_socket` for admin notifications. SKMUD configs also enable
+`newenv_immediate_ip` (proactive IP) and `newenv_fallback` (silent client timeout).
 
 Key config options:
 ```ini
@@ -99,6 +100,9 @@ Key config options:
 max-children = 900   # max concurrent forked children (0 = unlimited)
 listen-backlog = 16  # kernel listen queue depth
 log-file = /path     # connection log (empty = stderr only). Prod uses this for fail2ban
+newenv_immediate_ip = true  # send client IP before negotiation (for bans/logging)
+newenv_fallback = true      # respond WILL for silent clients after timeout
+newenv_fallback_ms = 2000   # timeout in milliseconds (only if fallback enabled)
 
 [client]
 security = auto    # peek first byte: TLS if 0x16, plaintext otherwise
@@ -120,8 +124,8 @@ Connection limits per environment:
 - **Fork-per-connection**: Parent process accepts, forks child per client. Child handles one session. `max-children` caps total forks; `listen-backlog` controls kernel accept queue depth.
 - **Pattern matching**: PCRE2 regex on the byte stream to intercept telnet negotiations (MNES, MCCP2).
 - **TLS**: OpenSSL. Cert loaded after fork so updates take effect on next connection.
-- **Compression**: MCCP2 on both client and game sides. Decompresses game→client, re-compresses client→game.
-- **IP forwarding**: Injects client's real IP as MNES NEW-ENVIRON IPADDRESS variable.
+- **Compression**: MCCP2 on both client and game sides. Decompresses game→client, re-compresses client→game. `mccp_nego` state machine tracks negotiation (OFFERED/ACCEPTED/REFUSED) for accurate MNES reporting.
+- **IP forwarding**: Injects client's real IP as MNES NEW-ENVIRON IPADDRESS variable. Optional proactive injection (`newenv_immediate_ip`) sends IP at connection time before negotiation. Optional fallback (`newenv_fallback`) responds WILL on behalf of silent clients after timeout.
 
 ## SKMUD Integration
 

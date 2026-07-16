@@ -21,6 +21,8 @@ Within each category, items are grouped by version (newest first), sorted by dat
 ## Protocol
 
 ### 5.11.1
+- [x] `5.11.1` `2026-07-15` Proactive IP injection (`newenv_immediate_ip`) — sends client IP to game server at connection time via unsolicited NEW-ENVIRON IS, before any telnet negotiation. Ensures game server has the real IP for connection-time bans, login notifications, and session logging. Config-gated, default off. **Files:** `proxy.c`, `muditm.conf`
+- [x] `5.11.1` `2026-07-15` Silent MNES fallback (`newenv_fallback`) — when a client ignores DO NEW-ENVIRON (sends neither WILL nor WONT), MUDitM responds WILL on behalf of the silent client after a configurable timeout (`newenv_fallback_ms`, default 2000). Triggers the normal `mnes_request` path for proxy-side fields. New client-side WILL handler tracks late arrivals and corrects state. Config-gated, default off. **Files:** `proxy.c`, `handlers.c`, `handlers.h`, `muditm.h`, `muditm.conf`
 - [x] `5.11.1` `2026-07-14` **BUG** MNES COMPRESSION reported config intent, not actual state — `mnes_request` checked `mccp_mode == MCCP_ENABLE` (the config setting) instead of whether MCCP2 was actually negotiated. All connections reported "MCCP2" even when the client ignored or refused the offer (e.g. raw telnet, terminal emulators). Fix: `mccp_nego` state machine (NONE → OFFERED → ACCEPTED/REFUSED) tracks the actual negotiation. `mnes_request` reports "MCCP2" if accepted, "none" otherwise (including while still negotiating). `mccp2_do` and `mccp2_dont` send proactive MNES updates to correct the initial report if negotiation completes after MNES fires. **Files:** `mccp.h`, `proxy.h`, `mccp.c`, `handlers.c`
 
 ### 5.11.0
