@@ -345,6 +345,19 @@ int muditm_proxy(Endpoint *client, Endpoint *game, GKeyFile *gkf) {
 	/* if mccp is enabled, send WILL MCCP2 to the client side. */
 	offer_compression(client);
 
+	/* If configured, send client IP to game server immediately so it is
+	 * available before login (for bans, notifications, DB records). */
+	if (get_conf_boolean(gkf, "muditm", "newenv_immediate_ip", 0))
+	{
+		char addrtxt[INET6_ADDRSTRLEN];
+		addr_endpoint(client, addrtxt, sizeof(addrtxt));
+		Iobuf *out = game->iobuf[EP_OUTPUT];
+		push_iobuf(out,
+			snprintf_mnes_pair(tail_iobuf(out), avail_iobuf(out),
+				"IPADDRESS", addrtxt));
+		flush_endpoint(game);
+	}
+
 	pollster[0].fd = client->socket;
 	pollster[0].events = POLLIN;
 	flow[0].in = client;
