@@ -310,7 +310,7 @@ int demonize(int mother_sock, int forking) {
 	}
 
 	inet_ntop(addr.sin6_family,&addr.sin6_addr,addrstr,sizeof(addrstr));
-	muditm_log("Connect from %s",addrstr);
+	muditm_log("Connect from %s port %d",addrstr,ntohs(addr.sin6_port));
 	return(client_sock);
 
 }

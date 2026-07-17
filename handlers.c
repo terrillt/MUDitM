@@ -248,8 +248,10 @@ int mnes_request(Iobuf *iob, size_t match_len, Endpoint *from, Endpoint *to, GKe
 	char addrtxt[INET6_ADDRSTRLEN];
 	Iobuf *out;
 
-	muditm_log("%s requested mnes new-environ info",from->name);
-	
+	addr_endpoint(to, addrtxt, sizeof(addrtxt));
+	muditm_log("%s requested mnes new-environ info (%s)",
+		from->name, addrtxt);
+
 	ipreportlist = g_key_file_get_string_list (gkf,"muditm","newenv_ipaddress",&ipreportcount,NULL);
 
 	/* this output is going back to who we got it from, not through the proxy to the other side */
@@ -317,8 +319,12 @@ int mnes_request(Iobuf *iob, size_t match_len, Endpoint *from, Endpoint *to, GKe
 /* the client will do new-env — update state (clears faked WONT if we timed out). */
 int mnes_client_will(Iobuf *iob, size_t match_len, Endpoint *from, Endpoint *to, GKeyFile *gkf) {
 
-	muditm_log("%s will mnes%s.",from->name,
-		from->mnes_state == WONT ? " (overriding timeout)" : "");
+	{
+		char ip[INET6_ADDRSTRLEN];
+		addr_endpoint(from, ip, sizeof(ip));
+		muditm_log("%s (%s) will mnes%s.", from->name, ip,
+			from->mnes_state == WONT ? " (overriding timeout)" : "");
+	}
 	from->mnes_state = WILL;
 
 	/* pass it through to the game server */
@@ -331,7 +337,11 @@ int mnes_client_wont(Iobuf *iob, size_t match_len, Endpoint *from, Endpoint *to,
 	Iobuf *out;
 	char mnes_will[] = { IAC, WILL, TELOPT_NEW_ENVIRON };
 
-	muditm_log("%s wont mnes.",from->name);
+	{
+		char ip[INET6_ADDRSTRLEN];
+		addr_endpoint(from, ip, sizeof(ip));
+		muditm_log("%s (%s) wont mnes.", from->name, ip);
+	}
 
 	out = (to->iobuf[EP_OUTPUT]);
 
@@ -352,8 +362,11 @@ int mnes_client_wont(Iobuf *iob, size_t match_len, Endpoint *from, Endpoint *to,
 
 int mnes_does(Iobuf *iob,size_t match_len,Endpoint *from, Endpoint *to,GKeyFile *gkf) {
 
-	/* just make a note of if. */
-	muditm_log("%s does new-environ.",from->name);
+	{
+		char ip[INET6_ADDRSTRLEN];
+		addr_endpoint(to, ip, sizeof(ip));
+		muditm_log("%s does new-environ (%s).", from->name, ip);
+	}
 	from->mnes_state = DO;
 	return(0);
 };
