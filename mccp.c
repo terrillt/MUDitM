@@ -197,8 +197,12 @@ void offer_compression(Endpoint *ep) {
 /* The stream is no longer TELNET, is it ZLIB.  disable TELNET pattern matching. */
 int mccp_ignore(Iobuf *iob,size_t match_len,Endpoint *from, Endpoint *to,GKeyFile *gkf) {
 
-	/* just make a note of if. */
-	muditm_log("%s has entered mccp compression, matching disabled.",from->name);
+	{
+		char ip[INET6_ADDRSTRLEN];
+		addr_endpoint(from, ip, sizeof(ip));
+		muditm_log("%s (%s) has entered mccp compression, matching disabled.",
+			from->name, ip);
+	}
 	disable_matching(from);
 	return(0);
 };
@@ -210,7 +214,12 @@ int mccp2_do(Iobuf *iob,size_t match_len,Endpoint *from, Endpoint *to,GKeyFile *
 	z_stream *z;
 	int ret;
 
-	muditm_log("%s has agreed to mccp2 compression.",from->name);
+	{
+		char ip[INET6_ADDRSTRLEN];
+		addr_endpoint(from, ip, sizeof(ip));
+		muditm_log("%s (%s) has agreed to mccp2 compression.",
+			from->name, ip);
+	}
 	
 	/* Remove that match from the input buffer, we don't want it sent across. */
 	pop_iobuf(iob, match_len);
@@ -253,10 +262,16 @@ int mccp2_do(Iobuf *iob,size_t match_len,Endpoint *from, Endpoint *to,GKeyFile *
 /* A side just requested NO compression.  disable it.*/
 int mccp2_dont(Iobuf *iob,size_t match_len,Endpoint *from, Endpoint *to,GKeyFile *gkf) {
 
-	if(from->mccp[EP_OUTPUT]) {
-		muditm_log("%s wants to shut down mccp2 compression.",from->name);
-	} else {
-		muditm_log("%s refuses mccp2 compression.",from->name);
+	{
+		char ip[INET6_ADDRSTRLEN];
+		addr_endpoint(from, ip, sizeof(ip));
+		if(from->mccp[EP_OUTPUT]) {
+			muditm_log("%s (%s) wants to shut down mccp2 compression.",
+				from->name, ip);
+		} else {
+			muditm_log("%s (%s) refuses mccp2 compression.",
+				from->name, ip);
+		}
 	}
 	
 	/* Remove that match from the input buffer, we don't want it sent across. */
@@ -289,7 +304,12 @@ int mccp2_sb_start(Iobuf *iob,size_t match_len,Endpoint *from, Endpoint *to,GKey
 	z_stream *z;
 	int ret;
 
-	muditm_log("%s has switched to mccp2 compression.",from->name);
+	{
+		char ip[INET6_ADDRSTRLEN];
+		addr_endpoint(from, ip, sizeof(ip));
+		muditm_log("%s (%s) has switched to mccp2 compression.",
+			from->name, ip);
+	}
 	
 	/* Remove that match from the input buffer, we don't want it sent across. */
 	pop_iobuf(iob, match_len);
