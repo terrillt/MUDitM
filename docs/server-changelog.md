@@ -21,6 +21,9 @@ Within each category, items are grouped by version (newest first), sorted by dat
 
 ## Protocol
 
+### 5.11.2
+- [x] `5.11.2` `2026-07-18` **BUG** Duplicate MCCP2 DO corrupted compression stream -- if a client sent DO COMPRESS2 twice (observed with CMUD and on reconnect), each call allocated a new zlib stream and sent a new SB COMPRESS2 marker into the already-compressed data. The client's decompressor interpreted the marker as compressed data, producing garbage output or a decompression error. Fix: guard checks if compression is already active before initializing. Duplicate logged and ignored. **Files:** `mccp.c`
+
 ### 5.11.1
 - [x] `5.11.1` `2026-07-15` Proactive IP injection (`newenv_immediate_ip`) — sends client IP to game server at connection time via unsolicited NEW-ENVIRON IS, before any telnet negotiation. Ensures game server has the real IP for connection-time bans, login notifications, and session logging. Config-gated, default off. **Files:** `proxy.c`, `muditm.conf`
 - [x] `5.11.1` `2026-07-15` Silent MNES fallback (`newenv_fallback`) — when a client ignores DO NEW-ENVIRON (sends neither WILL nor WONT), MUDitM responds WILL on behalf of the silent client after a configurable timeout (`newenv_fallback_ms`, default 2000). Triggers the normal `mnes_request` path for proxy-side fields. New client-side WILL handler tracks late arrivals and corrects state. Config-gated, default off. **Files:** `proxy.c`, `handlers.c`, `handlers.h`, `muditm.h`, `muditm.conf`
