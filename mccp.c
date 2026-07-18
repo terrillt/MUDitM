@@ -213,16 +213,23 @@ int mccp2_do(Iobuf *iob,size_t match_len,Endpoint *from, Endpoint *to,GKeyFile *
 	Iobuf *out;
 	z_stream *z;
 	int ret;
+	char ip[INET6_ADDRSTRLEN];
 
-	{
-		char ip[INET6_ADDRSTRLEN];
-		addr_endpoint(from, ip, sizeof(ip));
-		muditm_log("%s (%s) has agreed to mccp2 compression.",
-			from->name, ip);
-	}
-	
+	addr_endpoint(from, ip, sizeof(ip));
+	muditm_log("%s (%s) has agreed to mccp2 compression.",
+		from->name, ip);
+
 	/* Remove that match from the input buffer, we don't want it sent across. */
 	pop_iobuf(iob, match_len);
+
+	/* Guard against duplicate DO -- reinitializing the zlib stream while
+	 * the client is already decompressing corrupts the stream. */
+	if(from->mccp[EP_OUTPUT] != NULL) {
+		muditm_log("%s (%s) mccp2 already active, ignoring duplicate DO.",
+			from->name, ip);
+		from->mccp_nego = MCCP_NEGO_ACCEPTED;
+		return(1);
+	}
 
 	/* set up the z_stream */
 	z = new_zstream();
