@@ -15,6 +15,7 @@ Within each category, items are grouped by version (newest first), sorted by dat
 ## Contents
 
 - [Protocol](#protocol)
+- [Diagnostics](#diagnostics)
 - [Security](#security)
 - [TLS](#tls)
 
@@ -28,6 +29,11 @@ Within each category, items are grouped by version (newest first), sorted by dat
 ### 5.11.0
 - [x] `5.11.0` `2026-06-02` MNES variable injection — sends SECURITY (TLS version or "plaintext"), COMPRESSION (MCCP2 or none), and TRUSTED_IPADDRESS (kernel-verified client IP via `getpeername`) alongside existing PROXY_NAME and IPADDRESS. Game server uses TRUSTED_IPADDRESS for locked security decisions, standard IPADDRESS for display. **Files:** `handlers.c`
 - [x] `5.11.0` `2026-05-31` **BUG** Fix respond_wont sending DONT instead of WONT — respond_wont() sent IAC DONT instead of IAC WONT in response to IAC DO, violating RFC 854. Debug log already printed "WONT", masking the bug on the wire. Verified with raw byte capture before and after fix. **Files:** `handlers.c`
+
+## Diagnostics
+
+### 5.11.2
+- [x] `5.11.2` `2026-07-17` Client IP in negotiation log lines — all MNES and MCCP2 log messages now include the client's IP address via `addr_endpoint()`. Covers: MNES request/will/wont/does, MCCP2 agree/refuse/shutdown/activate/ignore. Client source port added to the Connect log line for per-connection correlation. **Files:** `handlers.c`, `mccp.c`, `muditm.c`
 
 ## Security
 
