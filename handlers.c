@@ -249,8 +249,8 @@ int mnes_request(Iobuf *iob, size_t match_len, Endpoint *from, Endpoint *to, GKe
 	Iobuf *out;
 
 	addr_endpoint(to, addrtxt, sizeof(addrtxt));
-	muditm_log("%s requested mnes new-environ info (%s)",
-		from->name, addrtxt);
+	muditm_log("%s requested mnes new-environ info (%s port %d)",
+		from->name, addrtxt, port_endpoint(to));
 
 	ipreportlist = g_key_file_get_string_list (gkf,"muditm","newenv_ipaddress",&ipreportcount,NULL);
 
