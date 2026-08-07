@@ -160,6 +160,18 @@ char *addr_endpoint(Endpoint *ep, char *buf, size_t size) {
 	return(buf);
 }
 
+int port_endpoint(Endpoint *ep) {
+
+	struct sockaddr_in6 sa;
+	socklen_t sa_size = sizeof(struct sockaddr_in6);
+
+	if(getpeername(ep->socket,(struct sockaddr *)&sa, &sa_size) <0) {
+		muditm_log("getpeername: ",strerror(errno));
+		return(0);
+	}
+	return ntohs(sa.sin6_port);
+}
+
 /* prints the source address of the endpoint into buf of given size */
 size_t stunnel_proxy_header1(Endpoint *ep, char *buf, size_t size) {
 

@@ -87,6 +87,7 @@ ssize_t read_endpoint_sock(Endpoint *ep, void *buf, size_t count);
 int close_endpoint(Endpoint *ep);
 void free_endpoint(Endpoint *ep);
 char *addr_endpoint(Endpoint *ep, char *buf, size_t size);
+int port_endpoint(Endpoint *ep);
 
 int muditm_proxy(Endpoint *client, Endpoint *game, GKeyFile *gkf);
 size_t stunnel_proxy_header1(Endpoint *ep, char *buf, size_t size);
