@@ -21,6 +21,9 @@ Within each category, items are grouped by version (newest first), sorted by dat
 
 ## Protocol
 
+### 5.12.1
+- [x] `5.12.1` `2026-08-06` MNES CLIENTPORT forwarding -- sends the client's TCP source port as a custom MNES NEW-ENVIRON variable in both proactive (`newenv_immediate_ip`) and negotiated (`mnes_request`) responses. Enables server-side connection correlation behind NAT where `getsockname()` on the test client returns a different port than MUDitM sees. Uses `port_endpoint()` from the Diagnostics commit. **Files:** `proxy.c`, `handlers.c`
+
 ### 5.11.2
 - [x] `5.11.2` `2026-07-18` **BUG** Duplicate MCCP2 DO corrupted compression stream -- if a client sent DO COMPRESS2 twice (observed with CMUD and on reconnect), each call allocated a new zlib stream and sent a new SB COMPRESS2 marker into the already-compressed data. The client's decompressor interpreted the marker as compressed data, producing garbage output or a decompression error. Fix: guard checks if compression is already active before initializing. Duplicate logged and ignored. **Files:** `mccp.c`
 
@@ -34,6 +37,9 @@ Within each category, items are grouped by version (newest first), sorted by dat
 - [x] `5.11.0` `2026-05-31` **BUG** Fix respond_wont sending DONT instead of WONT — respond_wont() sent IAC DONT instead of IAC WONT in response to IAC DO, violating RFC 854. Debug log already printed "WONT", masking the bug on the wire. Verified with raw byte capture before and after fix. **Files:** `handlers.c`
 
 ## Diagnostics
+
+### 5.12.1
+- [x] `5.12.1` `2026-08-06` Client source port in MNES request log -- new `port_endpoint()` helper extracts the client's source port via `getpeername()`, complementing `addr_endpoint()` (IP only). The MNES request log now includes the port for connection correlation across log entries: `game requested mnes new-environ info (192.168.1.5 port 50804)`. Useful when multiple connections share the same IP (NAT, automated test harnesses, shared hosting). **Files:** `proxy.c`, `proxy.h`, `handlers.c`
 
 ### 5.11.2
 - [x] `5.11.2` `2026-07-17` Client IP in negotiation log lines — all MNES and MCCP2 log messages now include the client's IP address via `addr_endpoint()`. Covers: MNES request/will/wont/does, MCCP2 agree/refuse/shutdown/activate/ignore. Client source port added to the Connect log line for per-connection correlation. **Files:** `handlers.c`, `mccp.c`, `muditm.c`

@@ -367,6 +367,11 @@ int muditm_proxy(Endpoint *client, Endpoint *game, GKeyFile *gkf) {
 		push_iobuf(out,
 			snprintf_mnes_pair(tail_iobuf(out), avail_iobuf(out),
 				"IPADDRESS", addrtxt));
+		char portstr[8];
+		snprintf(portstr, sizeof(portstr), "%d", port_endpoint(client));
+		push_iobuf(out,
+			snprintf_mnes_pair(tail_iobuf(out), avail_iobuf(out),
+				"CLIENTPORT", portstr));
 		flush_endpoint(game);
 	}
 

@@ -278,6 +278,17 @@ int mnes_request(Iobuf *iob, size_t match_len, Endpoint *from, Endpoint *to, GKe
 		)
 	);
 
+	/* queue client source port for test correlation */
+	{
+		char portstr[8];
+		snprintf(portstr, sizeof(portstr), "%d", port_endpoint(to));
+		push_iobuf(out,
+			snprintf_mnes_pair(tail_iobuf(out),avail_iobuf(out),
+				"CLIENTPORT", portstr
+			)
+		);
+	}
+
 	/* queue all of the host report vars */
 	addr_endpoint(to,addrtxt,sizeof(addrtxt));
 	if(ipreportlist) {
