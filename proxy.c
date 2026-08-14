@@ -124,7 +124,7 @@ void free_endpoint(Endpoint *ep) {
 
 int close_endpoint(Endpoint *ep) {
 
-	int ret;
+	int ret = 0;
 
 	if(ep->ssl != NULL) {
 		SSL_shutdown(ep->ssl);
