@@ -181,7 +181,7 @@ char *get_conf_string(GKeyFile * gkf, gchar * group, gchar * key, gchar * def) {
 	if ((gs = g_key_file_get_string(gkf, group, key, NULL))) {
 		return (gs);
 	} else {
-		return (strdup(def));
+		return (g_strdup(def));
 	}
 
 }
@@ -195,6 +195,7 @@ int get_conf_int(GKeyFile * gkf, gchar * group, gchar * key, int def) {
 	if (error == NULL) {
 		return (gs);
 	} else {
+		g_error_free(error);
 		return (def);
 	}
 
@@ -209,6 +210,7 @@ int get_conf_boolean(GKeyFile * gkf, gchar * group, gchar * key, int def) {
 	if (error == NULL) {
 		return (gs);
 	} else {
+		g_error_free(error);
 		return (def);
 	}
 
@@ -506,6 +508,18 @@ int main(int argc, char **argv)
 
 	if(ctx) SSL_CTX_free(ctx);
 	EVP_cleanup();
+
+	g_free(client_security);
+	g_free(game_security);
+	g_free(game_host);
+	g_free(game_service);
+	g_free(cert_file);
+	g_free(key_file);
+	g_free(chain_file);
+	g_free(log_file);
+	g_free(client_compression);
+	g_free(game_compression);
+	g_key_file_free(gkf);
 
 	free(muditm_proxy_name);
 
