@@ -1,143 +1,97 @@
-# MUDitM — SKMUD Fork
+# MUDitM -- SKMUD Fork
 
 TLS termination proxy for MUD servers. Forked from [RahjIII/MUDitM](https://github.com/RahjIII/MUDitM) (v1.0, Feb 2024). This fork adds macOS build support, bug fixes, security hardening, and SKMUD-specific features.
 
-## Quick Reference
-
-- **Upstream**: `github.com/RahjIII/MUDitM` (Jeff Jahr, The Last Outpost MUD)
-- **Fork**: `github.com/terrillt/MUDitM`
-- **License**: LGPL-3.0
-- **Parent project**: SKMUD (`/Users/mud/SKMUD/`), submodule at `src/externals/MUDitM/`
-- **Integration docs**: `docs/integration-plan.md`, `SKMUD/docs/modernization-roadmap.md`
-- **Architecture decision**: ADR-015 in `SKMUD/docs/project_notes/decisions.md`
-
-## Branch Strategy
-
-| Branch | Purpose |
-|--------|---------|
-| `main` | Upstream mirror. PR-worthy changes only. Cherry-pick from dev when ready. |
-| `master` | SKMUD stable. Deployed alongside production MUD server. |
-| `dev` | SKMUD development. All work goes here first. |
-
-**Rule**: Never commit directly to `main`. Work on `dev`, cherry-pick to `main` for PRs.
-
-## Commit Message Style
-
-- **PR-worthy commits** (destined for `main`): Upstream style — concise subject line, detailed explanatory paragraphs describing what changed, why, and how it was tested.
-- **SKMUD-specific commits** (stay on `dev`/`master`): SKMUD style — subject line, then categorized bullet points (Server/Infrastructure/Documentation) with sub-bullets for details.
+**See also:**
+- `docs/muditm-system.md` -- Detailed architecture: process model, signal handling, TLS, MCCP2, MNES, proxy loop, logging, config reference, cert expiry, crash diagnostics
+- `docs/project_notes/key_facts.md` -- Ports, environments, build requirements, branch strategy
+- `docs/project_notes/bugs.md` -- Active bugs and investigations
+- `docs/project_notes/roadmap.md` -- Planned work, upstream PRs
+- `docs/project_notes/pull-requests.md` -- PR tracking for upstream submissions
+- `docs/project_notes/server-changelog.md` -- Runtime behavior changes
+- `docs/project_notes/infra-changelog.md` -- Build system and project structure changes
+- `docs/project_notes/test-changelog.md` -- Test work
+- `docs/integration-plan.md` -- Original macOS port plan (historical)
 
 ## Build
 
-### macOS (dev environment)
 ```bash
+# macOS
 brew install pkgconf glib pcre2 openssl zlib
 make clean && make
-```
 
-### Linux (modern distro — Rocky 9, Debian 12, etc.)
-```bash
-# Install: gcc, make, pkg-config, libglib2.0-dev, libpcre2-dev, libssl-dev, zlib1g-dev
+# Linux
 make clean && make
-```
 
-### Sanitizer / coverage builds
-```bash
-# AddressSanitizer
+# Sanitizer builds
 make clean && make EXTRA_CFLAGS="-fsanitize=address -fno-omit-frame-pointer" EXTRA_LDFLAGS="-fsanitize=address"
 
-# ThreadSanitizer
-make clean && make EXTRA_CFLAGS="-fsanitize=thread -fno-omit-frame-pointer" EXTRA_LDFLAGS="-fsanitize=thread"
-
-# Coverage (gcov)
-make clean && make EXTRA_CFLAGS="--coverage" EXTRA_LDFLAGS="--coverage"
+# Tests (separate from main binary)
+make tests
+./tests/test_max_children
 ```
-
-`EXTRA_CFLAGS` and `EXTRA_LDFLAGS` are appended to the Makefile's built-in flags. Docker, CI, and deploy.sh pass these automatically to match the SKMUD build variant.
-
-### Tests
-```bash
-make tests                # Build test binaries (not part of 'make all')
-./tests/test_max_children # Run max-children connection limit test
-```
-
-Test binaries are built separately from the main binary because Xcode's build environment conflicts with bare `cc`. `deploy.sh` and CI call `make tests` explicitly. The pytest server chain auto-builds via `make tests` if the binary is missing.
-
-**Note**: Does NOT build on CentOS 7 (requires OpenSSL 1.1.0+, CentOS 7 ships 1.0.2).
 
 ## Run
 
 ```bash
-# Daemon mode (fork per connection):
-./muditm -c muditm-dev.conf
-
-# Debug mode (foreground, single connection):
-./muditm -d -c muditm-dev.conf
-
-# Version:
-./muditm -v
+./muditm -c muditm-dev.conf      # daemon mode (fork per connection)
+./muditm -d -c muditm-dev.conf   # debug mode (foreground, single connection)
+./muditm -v                       # version
 ```
+
+## Tests
+
+Two kinds of tests live in `tests/`:
+
+**C tests** (standalone binaries):
+- `test_max_children.c` -- connection limit test. Built via `make tests`.
+
+**Python tests** (SK test harness, future):
+- `test_server_muditm_*.py` -- server chain (raw connection, no login)
+- `test_unit_muditm_*.py` -- unit chain (server-less)
+
+Python tests follow SK naming conventions and are collected by the
+SKMUD test harness via the same extended glob pattern used for SKALD
+submodule tests. The harness is already wired to discover tests from
+submodule paths. Integration tests should skip if MUDitM is not
+running (check `pgrep -x muditm`).
+
+No Python tests exist yet. When adding one, follow the pattern in
+`src/externals/SKALD/tests/` and document in SKMUD's
+`tests/run_tests.py` glob list.
 
 ## Configuration
 
-See `muditm.conf` for the upstream example config with comments.
+See `docs/muditm-system.md` "Configuration" for the full config key reference and `docs/project_notes/key_facts.md` for per-environment port mappings.
 
-### Config files
-
-| File | Environment | Committed | Ports |
-|------|-------------|-----------|-------|
-| `muditm-dev.conf` | macOS dev | No (gitignored) | 2026 → 2027 |
-| `muditm-test.conf` | Docker test (VPS) | Yes | 2026 → 2027, self-signed cert |
-| `muditm-ci.conf` | CI pipeline | Yes | 1996 → 1997, self-signed cert |
-| `muditm-prod.conf` | Production | Yes | 1996 → 1997, Let's Encrypt cert |
-
-All configs use `security = auto` (TLS auto-detect), MNES IPADDRESS forwarding,
-and `[skmud] control_socket` for admin notifications. SKMUD configs also enable
-`newenv_immediate_ip` (proactive IP) and `newenv_fallback` (silent client timeout).
-
-Key config options:
-```ini
-[muditm]
-max-children = 900   # max concurrent forked children (0 = unlimited)
-listen-backlog = 16  # kernel listen queue depth
-log-file = /path     # connection log (empty = stderr only). Prod uses this for fail2ban
-newenv_immediate_ip = true  # send client IP before negotiation (for bans/logging)
-newenv_fallback = true      # respond WILL for silent clients after timeout
-newenv_fallback_ms = 2000   # timeout in milliseconds (only if fallback enabled)
-
-[client]
-security = auto    # peek first byte: TLS if 0x16, plaintext otherwise
-security = SSL     # require TLS (upstream default)
-security = none    # no TLS
-```
-
-Connection limits per environment:
-
-| Environment | max-children | Rationale |
-|-------------|-------------|-----------|
-| Production | 900 | Below MUD's ~1020 fd ceiling, prevents fork storm |
-| Test | 100 | Covers 27-connection test harness with headroom |
-| CI | 100 | Same as test |
-| Dev | 0 (unlimited) | Local only, not exposed |
+| File | Environment | Ports |
+|------|-------------|-------|
+| `muditm-dev.conf` | macOS dev (gitignored) | 2026 -> 2027 |
+| `muditm-test.conf` | Docker test | 2026 -> 2027 |
+| `muditm-ci.conf` | CI pipeline | 1996 -> 1997 |
+| `muditm-prod.conf` | Production | 1996 -> 1997 |
 
 ## Architecture
 
-- **Fork-per-connection**: Parent process accepts, forks child per client. Child handles one session. `max-children` caps total forks; `listen-backlog` controls kernel accept queue depth.
-- **Pattern matching**: PCRE2 regex on the byte stream to intercept telnet negotiations (MNES, MCCP2).
-- **TLS**: OpenSSL. Cert loaded after fork so updates take effect on next connection.
-- **Compression**: MCCP2 on both client and game sides. Decompresses game→client, re-compresses client→game. `mccp_nego` state machine tracks negotiation (OFFERED/ACCEPTED/REFUSED) for accurate MNES reporting.
-- **IP forwarding**: Injects client's real IP as MNES NEW-ENVIRON IPADDRESS variable. Optional proactive injection (`newenv_immediate_ip`) sends IP at connection time before negotiation. Optional fallback (`newenv_fallback`) responds WILL on behalf of silent clients after timeout.
+Fork-per-connection proxy with PCRE2 pattern matching on the telnet byte stream. See `docs/muditm-system.md` for details.
+
+- **TLS**: auto-detect (first-byte peek) or forced. Cert loaded post-fork for live renewal.
+- **MCCP2**: compression on both sides. State machine tracks negotiation for MNES reporting.
+- **MNES**: injects IPADDRESS, TRUSTED_IPADDRESS, SECURITY, COMPRESSION, PROXY_NAME, CLIENTPORT.
+- **Signals**: SIGTERM/SIGINT clean shutdown, SIGSEGV/SIGBUS/SIGABRT crash with backtrace, SIGCHLD zombie reaping, SIGPIPE ignored.
+- **DoS**: `max-children` caps forks, `listen-backlog` controls kernel queue.
 
 ## SKMUD Integration
 
-SKMUD's `comm.cpp` handles:
-- MNES IPADDRESS (stores in `d->claimed_ip`, untrusted display only)
-- MNES TRUSTED_IPADDRESS (stores in `d->trusted_ip`, locked from PROXY_ALLOWED sources, used for proxy checks)
-- MNES SECURITY, COMPRESSION, PROXY_NAME (proxy-guarded, display in `terminals` command)
-- Reverse DNS lookup on trusted_ip (background thread, shown in `terminals` detail)
-- 127.0.0.1 marked as `PROXY_ALLOWED` (migration 5.9.0-008)
-- TLS detection on raw port (sends handshake_failure alert) — bypassed when MUDitM is in front
+SKMUD's `comm.cpp` handles MNES variables from MUDitM:
+- `IPADDRESS` -> `d->claimed_ip` (untrusted display)
+- `TRUSTED_IPADDRESS` -> `d->trusted_ip` (locked, used for proxy checks)
+- `SECURITY`, `COMPRESSION`, `PROXY_NAME` -> proxy-guarded, shown in `terminals`
+- Reverse DNS on trusted_ip (background thread)
+- 127.0.0.1 marked `PROXY_ALLOWED` (migration 5.9.0-008)
 
-## Change History
+## Commit Rules
 
-- `docs/server-changelog.md` — runtime behavior changes
-- `docs/infra-changelog.md` — build system and project structure changes
+- Never commit directly to `main`. Work on `dev`, cherry-pick to `main` for upstream PRs.
+- PR-worthy commits: upstream style (concise subject, explanatory paragraphs).
+- SKMUD-specific commits: SKMUD style (subject + categorized bullets).

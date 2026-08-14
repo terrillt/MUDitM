@@ -2,7 +2,7 @@
 
 ## Phase 1 — macOS Build Portability ✓ COMPLETE
 
-Minimum changes to compile on macOS. See `docs/infra-changelog.md` for details.
+Minimum changes to compile on macOS. See `docs/project_notes/infra-changelog.md` for details.
 
 ## Phase 2 — Configure and Test MUDitM with SKMUD ✓ COMPLETE
 

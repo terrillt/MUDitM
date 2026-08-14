@@ -38,6 +38,11 @@ Within each category, items are grouped by version (newest first), sorted by dat
 
 ## Diagnostics
 
+### 5.12.2
+- [x] `5.12.2` `2026-08-13` **BUG** Uninitialized return value in `close_endpoint()` -- returned indeterminate value when `ep->socket` was already negative (no socket to close). Initialized `ret` to 0. **Files:** `proxy.c`
+- [x] `5.12.2` `2026-08-13` Signal handlers for shutdown and crash diagnosis -- SIGTERM/SIGINT exit the parent's accept loop cleanly, logging "Received signal N, shutting down." to the connection log. SIGSEGV/SIGBUS/SIGABRT write a crash identifier to stderr with PID and parent/child role, followed by a backtrace on glibc and macOS. Re-raises with default disposition so core dumps and sanitizer reports are preserved. alarm(5) prevents deadlock if backtrace() is called while the heap lock is held. **Files:** `muditm.c`
+- [x] `5.12.2` `2026-08-13` Free config resources at exit -- `get_conf_string()` default path changed from `strdup()` to `g_strdup()` so all returns use the GLib allocator. Added `g_free()` for the ten config strings and `g_key_file_free()` for the GKeyFile at process exit. Added `g_error_free()` in `get_conf_int()` and `get_conf_boolean()` for the GError allocated on the missing-key path. These are one-time startup allocations reclaimed by the OS at exit, not a runtime leak; under AddressSanitizer each child produced a 55KB LeakSanitizer report, quickly generating hundreds of megabytes of log files. **Files:** `muditm.c`
+
 ### 5.12.1
 - [x] `5.12.1` `2026-08-06` Client source port in MNES request log -- new `port_endpoint()` helper extracts the client's source port via `getpeername()`, complementing `addr_endpoint()` (IP only). The MNES request log now includes the port for connection correlation across log entries: `game requested mnes new-environ info (192.168.1.5 port 50804)`. Useful when multiple connections share the same IP (NAT, automated test harnesses, shared hosting). **Files:** `proxy.c`, `proxy.h`, `handlers.c`
 
