@@ -21,6 +21,10 @@
  */
 
 #include <arpa/inet.h>
+#if defined(__GLIBC__) || defined(__APPLE__)
+#include <execinfo.h>
+#define HAVE_BACKTRACE 1
+#endif
 #include <getopt.h>
 #include <glib.h>
 #include <netdb.h>
@@ -218,6 +222,7 @@ int get_conf_boolean(GKeyFile * gkf, gchar * group, gchar * key, int def) {
 
 /* Does what it says on the tin. */
 static volatile sig_atomic_t child_count = 0;
+static volatile sig_atomic_t shutdown_requested = 0;
 static int max_children = 0;
 
 void zombie_killer(int s) {
@@ -226,6 +231,54 @@ void zombie_killer(int s) {
 		child_count--;
 	}
 	errno = saved_errno;
+}
+
+void shutdown_handler(int s) {
+	shutdown_requested = s;
+}
+
+static pid_t parent_pid = 0;
+
+void fatal_handler(int s) {
+	/*
+	 * The message and re-raise below are async-signal-safe.
+	 * backtrace() is NOT -- it can deadlock if the crash occurred
+	 * inside malloc.  An alarm ensures the handler cannot hang
+	 * indefinitely; the worst case is a truncated or missing trace.
+	 */
+	const char *name = s == SIGSEGV ? "SIGSEGV"
+	                 : s == SIGBUS  ? "SIGBUS"
+	                 : s == SIGABRT ? "SIGABRT"
+	                 :                "UNKNOWN";
+	const char *role = (getpid() == parent_pid) ? "parent" : "child";
+	char buf[128];
+	int n = 0;
+	const char *prefix = "FATAL [";
+	while(*prefix && n < (int)sizeof(buf) - 1) buf[n++] = *prefix++;
+	/* decimal PID, async-signal-safe */
+	pid_t pid = getpid();
+	char digits[16];
+	int d = 0;
+	do { digits[d++] = '0' + (pid % 10); pid /= 10; } while(pid);
+	while(d > 0 && n < (int)sizeof(buf) - 1) buf[n++] = digits[--d];
+	if(n < (int)sizeof(buf) - 1) buf[n++] = ']';
+	if(n < (int)sizeof(buf) - 1) buf[n++] = ' ';
+	while(*role && n < (int)sizeof(buf) - 1) buf[n++] = *role++;
+	if(n < (int)sizeof(buf) - 1) buf[n++] = ' ';
+	while(*name && n < (int)sizeof(buf) - 1) buf[n++] = *name++;
+	buf[n++] = '\n';
+
+	write(STDERR_FILENO, buf, n);
+
+#ifdef HAVE_BACKTRACE
+	alarm(5);
+	void *frames[64];
+	int count = backtrace(frames, 64);
+	backtrace_symbols_fd(frames, count, STDERR_FILENO);
+#endif
+
+	signal(s, SIG_DFL);
+	raise(s);
 }
 
 int demonize(int mother_sock, int forking) {
@@ -256,7 +309,18 @@ int demonize(int mother_sock, int forking) {
 		}
 	}
 
+	sa.sa_handler = shutdown_handler;
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = 0;  /* no SA_RESTART: let accept() return EINTR */
+	sigaction(SIGTERM, &sa, NULL);
+	sigaction(SIGINT, &sa, NULL);
+
 	while(1) {
+
+		if(shutdown_requested) {
+			muditm_log("Received signal %d, shutting down.", shutdown_requested);
+			return(-1);
+		}
 
 		if(forking && max_children > 0 && child_count >= max_children) {
 			if(!at_capacity) {
@@ -420,6 +484,11 @@ int main(int argc, char **argv)
 	}
 
 	muditm_log_init(log_file);
+
+	parent_pid = getpid();
+	signal(SIGSEGV, fatal_handler);
+	signal(SIGBUS, fatal_handler);
+	signal(SIGABRT, fatal_handler);
 
 	muditm_log("Starting %s", muditm_proxy_name);
 
