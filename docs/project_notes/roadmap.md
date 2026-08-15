@@ -6,7 +6,7 @@ Open TODOs and planned work. Completed items move to a changelog.
 
 ## Upstream
 
-- [ ] Submit upstream PRs -- 10 identified in `pull-requests.md`, PR-MUDITM-001 ready, 9 pending cherry-pick
+- [ ] Submit upstream PRs -- 16 cherry-picked to `main` and pushed to fork; holding submission pending BUG-MUDITM-001 observation
 
 ## Testing
 
