@@ -29,6 +29,9 @@ Within each category, items are grouped by version (newest first), sorted by dat
 
 ## Build System
 
+### 5.12.2
+- [x] `5.12.2` `2026-08-16` Recover from a stale generated dependency path — `make`'s auto-generated `.d` files can list a header path under a package manager's versioned install directory (e.g. Homebrew's Cellar); an upgrade that removes the old version's directory previously left the build erroring outright (`make: *** No rule to make target ... Stop.`) instead of recovering. Added an empty-recipe pattern rule for headers so a missing prerequisite path triggers a rebuild (regenerating a correct `.d` file) instead of a hard failure. Adds no measurable overhead in the normal case — verified via `make -d`, identical header-check count and timing with or without the rule. Verified by reproducing the exact failure (editing a `.d` file to reference a stale version path) and confirming the fix resolves it, both directly via `make` and through a live Xcode build. **Files:** `makefile`
+
 ### 5.11.0
 - [x] `5.11.0` `2026-06-20` `make tests` target — builds test binaries separately from main binary. Not part of `all` (Xcode env conflicts). Called by deploy.sh and auto-built by pytest on demand. `make clean` removes test binaries. `.dSYM` added to .gitignore. **Files:** `makefile`, `.gitignore`
 - [x] `5.11.0` `2026-06-19` Sanitizer and coverage build support — EXTRA_CFLAGS/EXTRA_LDFLAGS variables appended to Makefile flags, enabling ASan/TSan/gcov builds via command line. Docker, CI, and deploy.sh pass matching flags automatically. **Files:** `makefile`, `.gitignore`

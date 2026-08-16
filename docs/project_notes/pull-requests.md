@@ -135,6 +135,17 @@ config files).
 - **Description**: `close_endpoint()` returned indeterminate value
   when socket was already negative. Initialize `ret` to 0.
 
+## PR-MUDITM-017: Recover from a stale generated dependency path
+
+- **Status**: Pending
+- **Commit**: `dd960f9`
+- **Description**: `make`'s generated `.d` files can list a header
+  path under a package manager's versioned install directory (e.g.
+  Homebrew's Cellar); an upgrade that removes the old version's
+  directory leaves the build erroring instead of recovering. Added
+  an empty-recipe pattern rule for headers so a missing path
+  triggers a rebuild instead of `make: *** No rule to make target`.
+
 ---
 
 ## SKMUD-Only
