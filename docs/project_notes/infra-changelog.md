@@ -38,6 +38,9 @@ Within each category, items are grouped by version (newest first), sorted by dat
 
 ## Project Structure
 
+### 5.12.2
+- [x] `5.12.2` `2026-08-16` AGENTS.md/CLAUDE.md split — new `AGENTS.md` holds the guidance previously in `CLAUDE.md` (build, run, config, architecture, branch strategy, commit style, SKMUD integration reference); `CLAUDE.md` reduced to header + `@AGENTS.md` import. AGENTS.md is a tool-agnostic convention other agent harnesses (Codex, etc.) also read, unlike CLAUDE.md which only Claude Code loads. Part of a repo-wide split done in the same pass across the parent SKMUD repo (root, `src/`, `tests/`, `docker/`); see ADR-030 in the parent repo's `docs/project_notes/decisions.md`. **Files:** `AGENTS.md`, `CLAUDE.md`
+
 ### 5.11.0
 - [x] `5.11.0` `2026-05-31` docs/ directory — server and infrastructure changelogs for this fork. **Files:** `docs/server-changelog.md`, `docs/infra-changelog.md`
 - [x] `5.11.0` `2026-05-31` CLAUDE.md project guide — build, run, config, architecture, branch strategy, commit style, SKMUD integration reference. **Files:** `CLAUDE.md`
