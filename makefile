@@ -102,6 +102,17 @@ $(BUILD)/$(MUDITM) : $(MUDITM_OFILES)
 # check the .h dependency rules in the .d files made by gcc
 -include $(MUDITM_DFILES)
 
+# A .d file can list a header under a path that stops existing later
+# (e.g. a Homebrew package version bump moves its Cellar path). -include
+# above already tolerates a MISSING .d file, but once a .d IS included,
+# make treats every path it lists as a real prerequisite -- with no
+# rule to build a deleted header, that's a hard "No rule to make
+# target" error instead of a rebuild. This empty-recipe pattern makes
+# any such missing prerequisite match trivially and be considered
+# always out of date, which just forces the dependent .o to rebuild
+# (regenerating a correct .d in the process) instead of erroring.
+%.h : ;
+
 # Build the .o's from the .c files, building .d's as you go.
 $(BUILD)/%.o : %.c
 	@mkdir -p $(dir $@)
