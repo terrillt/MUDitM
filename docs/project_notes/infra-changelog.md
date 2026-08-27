@@ -41,6 +41,9 @@ Within each category, items are grouped by version (newest first), sorted by dat
 
 ## Project Structure
 
+### 5.13.0
+- [x] `5.13.0` `2026-08-27` AGENTS.md audit -- added Authority section referencing parent SKMUD's write-restriction table with fork-specific constraints (toolchain parity, dev-first workflow). Compressed Tests section (20 to 4 lines, no Python tests exist yet). SKMUD Integration section replaced with docs/muditm-system.md pointer. Commit Rules removed (now covered by Authority). 98 to 80 lines. **Files:** `AGENTS.md`
+
 ### 5.12.2
 - [x] `5.12.2` `2026-08-16` AGENTS.md/CLAUDE.md split — new `AGENTS.md` holds the guidance previously in `CLAUDE.md` (build, run, config, architecture, branch strategy, commit style, SKMUD integration reference); `CLAUDE.md` reduced to header + `@AGENTS.md` import. AGENTS.md is a tool-agnostic convention other agent harnesses (Codex, etc.) also read, unlike CLAUDE.md which only Claude Code loads. Part of a repo-wide split done in the same pass across the parent SKMUD repo (root, `src/`, `tests/`, `docker/`); see ADR-030 in the parent repo's `docs/project_notes/decisions.md`. **Files:** `AGENTS.md`, `CLAUDE.md`
 

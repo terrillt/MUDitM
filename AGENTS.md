@@ -1,6 +1,15 @@
 # MUDitM -- SKMUD Fork
 
-TLS termination proxy for MUD servers. Forked from [RahjIII/MUDitM](https://github.com/RahjIII/MUDitM) (v1.0, Feb 2024). This fork adds macOS build support, bug fixes, security hardening, and SKMUD-specific features.
+TLS termination proxy for MUD servers. Forked from [RahjIII/MUDitM](https://github.com/RahjIII/MUDitM).
+
+## Authority
+
+This is a git submodule of SKMUD. All write restrictions in the parent repo's root `AGENTS.md` ("Authority and Write Restrictions") apply here — commits and pushes here move the gitlink every SKMUD checkout resolves against.
+
+Additional fork constraints:
+- Changes must not rely on tools or patterns the upstream author isn't using. Test with stock system toolchain.
+- Work on `dev` branch; cherry-pick to `main` for upstream-ready PRs.
+- Never modify upstream's original files on `main` without a clear upstream-submission plan.
 
 **See also:**
 - `docs/muditm-system.md` -- Detailed architecture: process model, signal handling, TLS, MCCP2, MNES, proxy loop, logging, config reference, cert expiry, crash diagnostics
@@ -41,24 +50,9 @@ make tests
 
 ## Tests
 
-Two kinds of tests live in `tests/`:
+**C tests:** `test_max_children.c` — connection limit test. Built via `make tests`.
 
-**C tests** (standalone binaries):
-- `test_max_children.c` -- connection limit test. Built via `make tests`.
-
-**Python tests** (SK test harness, future):
-- `test_server_muditm_*.py` -- server chain (raw connection, no login)
-- `test_unit_muditm_*.py` -- unit chain (server-less)
-
-Python tests follow SK naming conventions and are collected by the
-SKMUD test harness via the same extended glob pattern used for SKALD
-submodule tests. The harness is already wired to discover tests from
-submodule paths. Integration tests should skip if MUDitM is not
-running (check `pgrep -x muditm`).
-
-No Python tests exist yet. When adding one, follow the pattern in
-`src/externals/SKALD/tests/` and document in SKMUD's
-`tests/run_tests.py` glob list.
+**Python tests:** None yet. When adding, follow SKALD's `tests/` naming pattern (`test_server_muditm_*.py` / `test_unit_muditm_*.py`). Skip if MUDitM not running (`pgrep -x muditm`).
 
 ## Configuration
 
@@ -83,16 +77,4 @@ Fork-per-connection proxy with PCRE2 pattern matching on the telnet byte stream.
 
 ## SKMUD Integration
 
-SKMUD's `comm.cpp` handles MNES variables from MUDitM:
-- `IPADDRESS` -> `d->claimed_ip` (untrusted display)
-- `TRUSTED_IPADDRESS` -> `d->trusted_ip` (locked, used for proxy checks)
-- `SECURITY`, `COMPRESSION`, `PROXY_NAME` -> proxy-guarded, shown in `terminals`
-- Reverse DNS on trusted_ip (background thread)
-- 127.0.0.1 marked `PROXY_ALLOWED` (migration 5.9.0-008)
-
-## Commit Rules
-
-- Never commit directly to `main` — it's the upstream-PR branch. Work on `dev` or
-  `master`, cherry-pick to `main` for upstream PRs.
-- PR-worthy commits: upstream style (concise subject, explanatory paragraphs).
-- SKMUD-specific commits: SKMUD style (subject + categorized bullets).
+See `docs/muditm-system.md` "MNES Variable Mapping" for how `comm.cpp` handles MNES variables from MUDitM.

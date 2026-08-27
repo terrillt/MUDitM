@@ -40,4 +40,11 @@ Signal handlers were added to distinguish crashes from clean stops. A SIGTERM no
 
 **Not confirmed as a crash**: the original death may have been a deliberate stop that looked like a crash because nothing logged the parent's exit. Blocked on observing the next occurrence with the instrumentation in place.
 
+**Update 2026-08-20**: Reviewed logs on both environments with signal handlers deployed.
+
+- **Test**: Signal handler confirmed working -- 10 clean `Received signal 15, shutting down.` entries in the connection log from deploy-driven stops (Aug 18-20). Six watchdog restarts occurred earlier (Aug 11, 12, 13x2, 16, 17) but all predate signal handler deployment, so the cause is unknown. Zero unexplained deaths since signal handlers went live (~Aug 18). All `.err` files empty (no SIGSEGV/SIGBUS/SIGABRT).
+- **Prod**: Signal handler binary deployed Aug 17. MUDitM running continuously since Aug 17 00:54 (3.5 days). No stops have occurred, so no signal entries expected. All `.err` files empty.
+
+No recurrence since instrumentation was deployed. Still under observation.
+
 **Related**: `src/startup` watchdog monitors MUDitM and restarts it within 30 seconds if missing.
