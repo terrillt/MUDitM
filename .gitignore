@@ -1,4 +1,5 @@
 build/
+build-*/
 *.pem
 *.o
 *.d
@@ -6,6 +7,7 @@ tags
 muditm
 muditm-asan
 muditm-tsan
+muditm-coverage
 muditm.prev
 tests/test_max_children
 *.dSYM
