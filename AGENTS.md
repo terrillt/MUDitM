@@ -9,6 +9,7 @@ This is a git submodule of SKMUD. All write restrictions in the parent repo's ro
 Additional fork constraints:
 - Changes must not rely on tools or patterns the upstream author isn't using. Test with stock system toolchain.
 - Work on `dev` branch; cherry-pick to `main` for upstream-ready PRs.
+- A PR-worthy commit's subject starts with `PR: ` on `dev`/`master`; the cherry-pick to `main` drops the prefix and takes upstream style (`docs/project_notes/key_facts.md`, "Commit Message Style").
 - Never modify upstream's original files on `main` without a clear upstream-submission plan.
 
 **See also:**

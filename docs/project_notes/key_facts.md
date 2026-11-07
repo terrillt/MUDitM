@@ -53,5 +53,5 @@ MUDitM listens on port N (front door), forwards to the MUD server on port N+1 (i
 
 ## Commit Message Style
 
-- **PR-worthy commits** (for `main`): upstream style -- concise subject, explanatory paragraphs
+- **PR-worthy commits** (for `main`): upstream style -- concise subject, explanatory paragraphs; on `dev`/`master` the subject carries a `PR: ` prefix, dropped at the cherry-pick to `main`
 - **SKMUD-specific commits** (stay on `dev`/`master`): SKMUD style -- subject + categorized bullets

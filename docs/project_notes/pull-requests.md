@@ -56,7 +56,9 @@ config files).
 ## PR-MUDITM-006: DoS hardening
 
 - **Status**: Ready
-- **Commit**: `81bd758` (main: `599b0d7`)
+- **Commit**: `81bd758` (main: `599b0d7`), plus `10733fe` (the
+  self-test's evidence and cleanup fix, 2026-11-07), to be squashed
+  into the main commit before submission
 - **Description**: `max-children` fork cap, `listen-backlog` config,
   capacity transition logging, EINTR handling in accept loop.
   Includes `test_max_children` test binary.
