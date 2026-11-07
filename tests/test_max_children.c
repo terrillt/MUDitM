@@ -4,7 +4,12 @@
  * and verifies connections are capped and queued correctly.
  *
  * Build:  cc -o test_max_children tests/test_max_children.c
- * Run:    ./test_max_children [path-to-muditm]
+ * Run:    ./test_max_children [path-to-muditm] [log-dir]
+ *
+ * With a log directory, MUDitM's log is kept there as
+ * muditm-selftest.log for the caller to read after a failure.
+ *
+ * Copyright (c) 2026 Shattered Kingdoms. All rights reserved.
  */
 
 #include <arpa/inet.h>
@@ -29,14 +34,28 @@ static char conf_path[256];
 static char log_path[256];
 static int  held_conns[MAX_CONNS];
 static int  held_count = 0;
+static int  keep_log = 0;
+
+/* TERM, then up to five seconds for the exit, then KILL: a helper that
+ * ignores TERM, or sits in a blocked call, must not keep this process
+ * (and the caller's pipe) alive from inside an exit handler. */
+static void stop(pid_t pid) {
+	kill(pid, SIGTERM);
+	for (int i = 0; i < 50; i++) {
+		if (waitpid(pid, NULL, WNOHANG) != 0) return;
+		usleep(100000);
+	}
+	kill(pid, SIGKILL);
+	waitpid(pid, NULL, 0);
+}
 
 static void cleanup(void) {
 	for (int i = 0; i < held_count; i++)
 		if (held_conns[i] >= 0) close(held_conns[i]);
-	if (muditm_pid > 0) { kill(muditm_pid, SIGTERM); waitpid(muditm_pid, NULL, 0); }
-	if (echo_pid > 0) { kill(echo_pid, SIGTERM); waitpid(echo_pid, NULL, 0); }
+	if (muditm_pid > 0) stop(muditm_pid);
+	if (echo_pid > 0) stop(echo_pid);
 	if (conf_path[0]) unlink(conf_path);
-	if (log_path[0]) unlink(log_path);
+	if (log_path[0] && !keep_log) unlink(log_path);
 }
 
 static int bind_any_port(void) {
@@ -144,7 +163,20 @@ static int file_contains(const char *path, const char *needle) {
 
 int main(int argc, char **argv) {
 	const char *muditm_bin = (argc > 1) ? argv[1] : "./muditm";
+	const char *log_dir = (argc > 2) ? argv[2] : NULL;
 	int pass = 0, fail = 0, total = 4;
+
+	/* A proxy child that closes a connection before this process writes
+	 * to it would otherwise kill this process with SIGPIPE: no exit
+	 * status, no summary, and no cleanup, so MUDitM and the echo server
+	 * would outlive the test holding the caller's output pipe open. */
+	signal(SIGPIPE, SIG_IGN);
+	/* Each result line reaches the caller as it is printed, so a hang
+	 * still shows which step it was in; the pid first, so the caller
+	 * can tell this run's MUDitM (its config is named after the pid)
+	 * from any other. */
+	setvbuf(stdout, NULL, _IOLBF, 0);
+	printf("pid: %d\n", (int)getpid());
 
 	if (access(muditm_bin, X_OK) != 0) {
 		printf("SKIP: muditm binary not found at %s\n", muditm_bin);
@@ -166,7 +198,21 @@ int main(int argc, char **argv) {
 
 	/* write config */
 	snprintf(conf_path, sizeof(conf_path), "/tmp/muditm_test_%d.conf", getpid());
-	snprintf(log_path, sizeof(log_path), "/tmp/muditm_test_%d.log", getpid());
+	/* With a log directory the MUDitM log is kept for the caller to
+	 * read (it is the only record of what the proxy did); without one
+	 * it goes to /tmp and is removed with the config. */
+	if (log_dir) {
+		snprintf(log_path, sizeof(log_path), "%s/muditm-selftest.log", log_dir);
+		keep_log = 1;
+		/* A log left by an earlier run would satisfy Test 4 by itself. */
+		if (unlink(log_path) != 0 && errno != ENOENT) {
+			printf("FAIL: cannot remove the old log %s: %s\n",
+			       log_path, strerror(errno));
+			return 1;
+		}
+	} else {
+		snprintf(log_path, sizeof(log_path), "/tmp/muditm_test_%d.log", getpid());
+	}
 	FILE *cf = fopen(conf_path, "w");
 	fprintf(cf,
 		"[muditm]\n"
@@ -279,6 +325,7 @@ int main(int argc, char **argv) {
 		fail++;
 	}
 
+	if (keep_log) printf("MUDitM log: %s\n", log_path);
 	printf("\n%d/%d passed, %d/%d failed\n", pass, total, fail, total);
 	return (fail > 0) ? 1 : 0;
 }
